@@ -1,0 +1,46 @@
+{% extends 'books/base.html' %}
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+    <span class="me-2">Sırala:</span>
+
+    <a href="?sort=title" class="btn btn-outline-primary">
+        Başlığa göre
+    </a>
+
+    <a href="?sort=page_count" class="btn btn-outline-primary">
+        Sayfa sayısına göre
+    </a>
+</div>
+
+
+    <div class="row">
+
+        {% for book in books %}
+
+        <div class="col-md-4">
+            <div class="card">
+
+                <div class="card-body">
+                    <h3 class="card-title">{{ book.title }}</h3>
+
+                    <p class="card-text">Yazar: {{ book.author }}</p>
+                    <p class="card-text">Kategori: {{ book.category }}</p>
+                    <p class="card-text">Sayfa Sayısı: {{ book.page_count }}</p>
+
+                    <a href="{% url 'book-detail' book.pk %}" class="btn btn-primary">Detay</a>
+                    <a href="{% url 'book-update' book.pk %}" class="btn btn-warning">Güncelle</a>
+                    <a href="{% url 'book-delete' book.pk %}" class="btn btn-danger">Sil</a>
+
+
+                    <hr>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+
+{% endblock %}

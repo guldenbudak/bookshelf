@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kitaplık</title>
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'books/style.css' %}">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+    <a class="navbar-brand" href="{% url 'home' %}">
+        Kitaplık
+    </a>
+    <div class="navbar-nav">
+        <a class="nav-link" href="{% url 'home' %}">
+            Ana Sayfa
+        </a>
+        <a class="nav-link" href="{% url 'book-list' %}">
+            Kitaplar
+        </a>
+
+        <a class="nav-link" href="{% url 'book-create' %}">
+            Kitap Ekle
+        </a>
+        </div>
+    </div>
+</nav>
+{% block content %}
+{% endblock %}
+
+<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+</body>
+</html>

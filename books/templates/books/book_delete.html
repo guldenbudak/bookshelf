@@ -1,0 +1,21 @@
+{% extends 'books/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <h2>Kitabı Sil</h2>
+
+            <p>{{ book.title }} kitabını silmek istediğinizden emin misiniz?</p>
+
+            <form method="POST">
+                {% csrf_token %}
+               <button type="submit" class="btn btn-danger">
+                    Sil
+                </button>
+                <a href="{% url 'book-detail' book.pk %}">Vazgeç</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

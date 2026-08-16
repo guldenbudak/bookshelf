@@ -1,0 +1,52 @@
+{% extends 'books/base.html' %}
+{% load widget_tweaks %}
+{% block content %}
+<div class="container mt-5">
+
+    <div class="card">
+        <div class="card-body">
+
+            <h2 class="card-title mb-4">Kitap Ekle</h2>
+            <form method="POST" enctype="multipart/form-data" >
+
+                {% csrf_token %}
+                <div class="mb-3">
+                    {{ form.title.label_tag }}
+                    {% render_field form.title class="form-control" %}
+                </div>
+                <div class="mb-3">
+                    {{ form.author.label_tag }}
+                    {% render_field form.author class="form-control" %}
+                </div>
+                <div class="mb-3">
+                    {{ form.category.label_tag }}
+                    {% render_field form.category class="form-control" %}
+                </div>
+                <div class="mb-3">
+                    {{ form.page_count.label_tag }}
+                    {% render_field form.page_count class="form-control" %}
+                </div>
+                <div class="mb-3">
+                    {{ form.rating.label_tag }}
+                    {% render_field form.rating class="form-control" %}
+                    {{ form.rating.errors }}
+                </div>
+                <div class="mb-3">
+                    {{ form.is_read }}
+                    {{ form.is_read.label_tag }}
+                </div>
+                <div class="mb-3">
+                    {{ form.cover.label_tag }}
+                    {% render_field form.cover class="form-control" %}
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    Kaydet
+                </button>
+
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

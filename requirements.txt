@@ -1,0 +1,7 @@
+asgiref==3.12.1
+Django==6.0.7
+django-debug-toolbar==7.1.0
+django-widget-tweaks==1.5.1
+pillow==12.3.0
+python-dotenv==1.2.2
+sqlparse==0.5.5

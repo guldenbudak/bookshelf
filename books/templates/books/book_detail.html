@@ -1,0 +1,45 @@
+{% extends 'books/base.html' %}
+{% block content %}
+<div class="container mt-5">
+
+    <div class="card">
+
+        <div class="card-body">
+            <h2 class="card-title">{{ book.title }}</h2>
+            <p class="card-text">Yazar: {{ book.author }}</p>
+            <p class="card-text">Kategori: {{ book.category }}</p>
+            <p class="card-text">Sayfa Sayısı: {{ book.page_count }}</p>
+
+            {% if book.cover %}
+                <img src="{{ book.cover.url }}" width="100">
+            {% endif %}
+
+            {% if book.is_read %}
+                <p class="card-text">Okundu: Evet</p>
+            {% else %}
+                <p class="card-text">Okundu: Hayır</p>
+            {% endif %}
+
+            {% if book.rating %}
+                <p class="card-text">Puan: {{ book.rating }}</p>
+            {% else %}
+                <p class="card-text">Puan: Henüz puan verilmemiş.</p>
+            {% endif %}
+
+            <br>
+
+            <a href="{% url 'book-list' %}" class="btn btn-secondary">
+                Kitap Listesine Dön
+            </a>
+
+            <a href="{% url 'book-update' book.pk %}" class="btn btn-warning">
+                Güncelle
+            </a>
+
+            <a href="{% url 'book-delete' book.pk %}" class="btn btn-danger">
+                Sil
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
