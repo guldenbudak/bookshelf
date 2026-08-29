@@ -8,12 +8,15 @@ class AccountApproval(models.Model):
         REJECTED = 'rejected','Reddedildi'
 
     user = models.OneToOneField(User, on_delete=models.CASCADE,related_name='account_approval')
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.APPROVED)
     reason = models.TextField(blank=True)
     reviewed_by = models.ForeignKey(User, null=True, blank=True,
                                     on_delete=models.SET_NULL, related_name='reviewed_accounts')
     reviewed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.status}"
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE,related_name='profile')
