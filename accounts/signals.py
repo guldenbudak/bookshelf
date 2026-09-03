@@ -8,4 +8,10 @@ from .models import Profile, AccountApproval
 def create_profile_and_approval(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
-        AccountApproval.objects.create(user=instance)
+        if instance.is_superuser:
+            status = AccountApproval.Status.APPROVED
+        else:
+            status = AccountApproval.Status.PENDING
+
+        AccountApproval.objects.create(user=instance, status=status)
+
