@@ -12,6 +12,7 @@ class AccountApproval(models.Model):
     reason = models.TextField(blank=True)
     reviewed_by = models.ForeignKey(User, null=True, blank=True,
                                     on_delete=models.SET_NULL, related_name='reviewed_accounts')
+
     reviewed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
