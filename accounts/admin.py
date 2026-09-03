@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.utils import timezone
-from accounts.models import AccountApproval
+from accounts.models import AccountApproval, Profile
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin
 
 
 def approve_users(modeladmin, request, queryset):
@@ -26,4 +28,21 @@ class AccountApprovalAdmin(admin.ModelAdmin):
     actions = [approve_users, reject_users]
 
 
+class ProfileInline(admin.StackedInline):
+    model = Profile
+
+
+class AccountApprovalInline(admin.StackedInline):
+    model = AccountApproval
+    fk_name = 'user'
+
+
 admin.site.register(AccountApproval, AccountApprovalAdmin)
+
+
+class CustomUserAdmin(UserAdmin):
+    inlines = [ProfileInline, AccountApprovalInline]
+
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
