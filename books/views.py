@@ -2,10 +2,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .forms import BookForm
 from .models import Book
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from accounts.decorators import approved_required
 
 def home(request):
     return render(request, 'books/home.html')
 
+@login_required
+@approved_required
 def book_create(request):
     if request.method == 'POST':
         form = BookForm(request.POST, request.FILES)
@@ -18,6 +22,8 @@ def book_create(request):
 
     return render(request, 'books/book_create.html', {'form': form})
 
+@login_required
+@approved_required
 def book_list(request):
     books = Book.objects.select_related('category')
     sort = request.GET.get('sort')
@@ -27,10 +33,14 @@ def book_list(request):
         books = books.order_by('page_count')
     return render(request, 'books/book_list.html', {'books': books})
 
+@login_required
+@approved_required
 def book_detail(request, pk):
         book = get_object_or_404(Book, pk=pk)
 
         return render(request, 'books/book_detail.html', {'book': book})
+@login_required
+@approved_required
 def book_update(request, pk):
     book = get_object_or_404(Book, pk=pk)
 
@@ -48,6 +58,9 @@ def book_update(request, pk):
     return render(request, 'books/book_update.html', {'form': form})
 
 
+
+@login_required
+@approved_required
 def book_delete(request, pk):
     book = get_object_or_404(Book, pk=pk)
     if request.method == 'POST':
