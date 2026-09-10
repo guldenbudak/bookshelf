@@ -1,44 +1,143 @@
-# 📚 Bookshelf
+# Kitaplık — Çok Kullanıcılı Sosyal Kitaplık
 
-Django ve Bootstrap kullanılarak geliştirilmiş basit bir kitaplık yönetim uygulamasıdır.
+Kullanıcıların kendi kitaplıklarını oluşturduğu, arkadaşlarının kitaplarını
+görebildiği ve yorum yapabildiği bir Django uygulaması. Yeni kayıtlar yönetici
+onayından geçmeden uygulamayı kullanamaz.
 
-## 🚀 Özellikler
+## Kurulum
 
-- Kitap ekleme
-- Kitapları listeleme
-- Kitap detaylarını görüntüleme
-- Kitap bilgilerini güncelleme
-- Kitap silme
-- Kitapları başlığa göre sıralama
-- Kitapları sayfa sayısına göre sıralama
-- Kitap kapağı yükleme
-- Okundu bilgisini takip etme
-- Kitaplara puan verme
+```bash
+git clone <repo-adresi>
+cd bookshelf
 
-## 🛠️ Kullanılan Teknolojiler
+python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
 
-- Python
-- Django
-- Bootstrap 5
-- SQLite
-- HTML
-- CSS
+pip install -r requirements.txt
 
-## 📂 Proje Yapısı
+cp .env.example .env               # SECRET_KEY ve DEBUG değerlerini düzenle
 
-```text
-bookshelf/
-├── books/
-│   ├── migrations/
-│   ├── static/
-│   ├── templates/
-│   ├── forms.py
-│   ├── models.py
-│   ├── urls.py
-│   └── views.py
-├── bookshelf/
-│   ├── settings.py
-│   ├── urls.py
-│   └── ...
-├── manage.py
-└── README.md
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+Python 3.14 ve Django 6.0 ile geliştirildi.
+
+### .env değişkenleri
+
+| Değişken | Açıklama |
+|---|---|
+| `SECRET_KEY` | Django imzalama anahtarı. Üretimde gizli tutulmalı. |
+| `DEBUG` | `True` / `False`. Üretimde `False` olmalı. |
+
+`.env`, `db.sqlite3` ve `media/` depoya dahil edilmez (`.gitignore`).
+
+## Veri modeli
+
+```
+User (django.contrib.auth)
+ │
+ ├── 1:1 Profile
+ ├── 1:1 AccountApproval      onay durumu + onaylayan admin + tarih
+ └── 1:N Book (owner)         [Aşama 4]
+
+Book ──── N:1 Category
+```
+
+Sonraki aşamalarda eklenecek tablolar: `ProfileSettings`, `SocialLink`,
+`Address`, `FriendRequest`, `Friendship`, `Favorite`, `Comment`.
+
+### AccountApproval
+
+| Alan | Açıklama |
+|---|---|
+| `user` | Onayı beklenen kullanıcı (OneToOne) |
+| `status` | `pending` / `approved` / `rejected`, varsayılan `pending` |
+| `reason` | Özellikle red durumunda kullanıcıya gösterilen sebep |
+| `reviewed_by` | İşlemi yapan yönetici (`SET_NULL`) |
+| `reviewed_at` | İnceleme zamanı |
+| `created_at` | Başvuru zamanı |
+
+`Profile` ve `AccountApproval` kayıtları `post_save` signal'i ile otomatik
+oluşturulur (`accounts/signals.py`). Superuser'lar doğrudan `approved` başlar,
+aksi hâlde ilk yönetici kendi admin panelinden kilitlenirdi.
+
+## Tamamlanan aşamalar
+
+- [x] **Aşama 0** — Hazırlık
+- [x] **Aşama 1** — Kayıt, giriş ve admin onayı
+- [ ] Aşama 2 — Profil (çok tablolu)
+- [ ] Aşama 3 — Arkadaşlık sistemi
+- [ ] Aşama 4 — Kitap sahipliği ve görünürlük
+- [ ] Aşama 5 — Favoriler
+- [ ] Aşama 6 — Yorumlar
+- [ ] Aşama 7 — Kalite ve performans
+
+### Aşama 1'de yapılanlar
+
+| Adres | İşlev |
+|---|---|
+| `/accounts/register/` | Kayıt. E-posta zorunlu ve benzersiz. |
+| `/accounts/login/` | Giriş (Django `LoginView`) |
+| `/accounts/logout/` | Çıkış (Django `LogoutView`, yalnızca POST) |
+| `/accounts/pending/` | Onay bekleyen / reddedilen kullanıcının durum ekranı |
+
+Kitap view'larının tamamı `@login_required` + `@approved_required` ile
+korunmaktadır. Ana sayfa herkese açıktır.
+
+## Tasarım kararları
+
+### Neden `books` app'i yerine ayrı bir `accounts` app'i?
+
+**Sorumluluk ayrımı.** `books` uygulamasının konusu kitaptır; `accounts`
+uygulamasının konusu kullanıcıdır (kayıt, onay, profil, arkadaşlık). İkisini
+aynı app'te toplamak `models.py` ve `views.py` dosyalarını konusu belirsiz,
+uzun dosyalara dönüştürür.
+
+**Taşınabilirlik.** Kayıt ve onay akışı kitaplara özgü değildir. Ayrı bir app
+olduğunda başka bir projeye olduğu gibi taşınabilir.
+
+**Django'nun tasarım mantığı.** App, tek bir işi yapan ve kendi modeli,
+migration'ı, şablonu ve admin tanımı olan bağımsız birimdir. Django'nun kendi
+`django.contrib.auth` uygulaması da aynı ayrımı yapar.
+
+Somut fayda: `accounts` app'inin kendi `migrations/` klasörü olduğu için
+kullanıcı tarafındaki şema değişiklikleri kitap tarafındakilerle karışmaz.
+
+### Yetki kontrolü: decorator mı, middleware mi?
+
+Bu projede **decorator** tercih edildi (`accounts/decorators.py`).
+
+| | Decorator | Middleware |
+|---|---|---|
+| Kapsam | Yalnızca işaretlenen view | Her istek |
+| Görünürlük | View'a bakınca korumalı olduğu görülür | View'dan görünmez |
+| Yeni view eklenince | Korumasız başlar (unutulabilir) | Otomatik korunur |
+| İstisnalar | Gerekmez | Login, register, pending, static, admin için liste tutulmalı |
+
+**Middleware ile yapsaydık ne değişirdi:** kontrol her isteğe otomatik
+uygulanırdı, yani yeni bir view yazarken korumayı unutmak imkânsız olurdu —
+güvenlik açısından daha güçlü bir varsayılan. Buna karşılık giriş, kayıt ve
+onay bekleme sayfalarının kontrolden muaf tutulması gerekirdi; bu muafiyet
+listesi büyüdükçe hata yapma ihtimali artar. Ayrıca `book_list` fonksiyonuna
+bakan biri, view'ın korumalı olduğunu koddan anlayamazdı.
+
+**Hangisi ne zaman:** korunması gereken view sayısı azsa ve site büyük ölçüde
+herkese açıksa decorator uygundur. Sitenin neredeyse tamamı girişe bağlıysa
+middleware daha güvenli bir varsayılan sunar. Bu proje şu an ikinci gruba
+yaklaşıyor; yine de ödevin gereği ve kodun okunabilirliği nedeniyle decorator
+kullanıldı.
+
+Bir ayrıntı: `approved_required` decorator'ı, `@login_required` ile
+zincirlenmese bile kendi içinde giriş kontrolü yapar. Anonim kullanıcıda
+`request.user.account_approval` çağrısı hata vereceği için bu kontrol
+zorunludur.
+
+## Ekran görüntüleri
+
+_Aşama 7'de eklenecek: kayıt, onay bekliyor, profil, arkadaşlar, feed._
+
+## Performans
+
+_Aşama 7'de eklenecek: debug toolbar öncesi/sonrası sorgu sayısı._
