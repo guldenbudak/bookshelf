@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
 
 
+@admin.action(description="Seçili kullanıcıları onayla")
 def approve_users(modeladmin, request, queryset):
     queryset.update(
         status=AccountApproval.Status.APPROVED,
@@ -13,6 +14,7 @@ def approve_users(modeladmin, request, queryset):
     )
 
 
+@admin.action(description="Seçili kullanıcıları reddet")
 def reject_users(modeladmin, request, queryset):
     queryset.update(
         status=AccountApproval.Status.REJECTED,
