@@ -1,8 +1,10 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, render
 from django.views import View
 
 from .forms import RegisterForm
+from .models import AccountApproval
 
 
 class RegisterView(View):
@@ -23,3 +25,17 @@ class RegisterView(View):
             return redirect('login')
 
         return render(request, self.template_name, {'form': form})
+
+
+class PendingView(LoginRequiredMixin, View):
+    """Onayı beklemede olan ya da reddedilen kullanıcıya durumunu gösterir."""
+
+    template_name = 'account/pending.html'
+
+    def get(self, request):
+        approval = AccountApproval.objects.filter(user=request.user).first()
+
+        if approval and approval.status == AccountApproval.Status.APPROVED:
+            return redirect('home')
+
+        return render(request, self.template_name, {'approval': approval})

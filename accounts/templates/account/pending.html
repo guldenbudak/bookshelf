@@ -1,0 +1,64 @@
+{% extends 'books/base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            {% if approval and approval.status == 'rejected' %}
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4 p-md-5 text-center">
+                        <div class="display-6 mb-3">⛔</div>
+                        <h2 class="h5 fw-bold mb-3">Hesabınız reddedildi</h2>
+                        <p class="text-muted mb-4">
+                            Başvurunuz yönetici tarafından incelendi ve onaylanmadı.
+                        </p>
+
+                        {% if approval.reason %}
+                            <div class="alert alert-danger text-start small mb-4">
+                                <strong>Red sebebi:</strong><br>
+                                {{ approval.reason }}
+                            </div>
+                        {% endif %}
+
+                        <form method="POST" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary">
+                                Çıkış Yap
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            {% else %}
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4 p-md-5 text-center">
+                        <div class="display-6 mb-3">⏳</div>
+                        <h2 class="h5 fw-bold mb-3">Hesabınız onay bekliyor</h2>
+                        <p class="text-muted mb-4">
+                            Hesabınız henüz yönetici tarafından onaylanmamıştır.
+                            Onaylandığında bilgilendirileceksiniz.
+                        </p>
+
+                        <p class="small text-muted mb-4">
+                            Başvuru tarihi:
+                            {{ approval.created_at|date:"d F Y, H:i"|default:"-" }}
+                        </p>
+
+                        <form method="POST" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary">
+                                Çıkış Yap
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
