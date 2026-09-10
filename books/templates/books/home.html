@@ -12,8 +12,15 @@
                     <p class="text-white-50 mb-4 lead">
                         Kitaplarınızı ekleyin, düzenleyin ve takip edin.
                     </p>
-                    <a href="{% url 'book-list' %}" class="btn btn-success">Kitapları Gör</a>
-                    <a href="{% url 'book-create' %}" class="btn btn-light">Kitap Ekle </a>
+                    {% if user.account_approval.status == 'approved' %}
+                        <a href="{% url 'book-list' %}" class="btn btn-success">Kitapları Gör</a>
+                        <a href="{% url 'book-create' %}" class="btn btn-light">Kitap Ekle </a>
+                    {% elif user.is_authenticated %}
+                        <a href="{% url 'pending' %}" class="btn btn-warning">Hesap Durumum</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-success">Giriş Yap</a>
+                        <a href="{% url 'register' %}" class="btn btn-light">Kayıt Ol</a>
+                    {% endif %}
                 </div>
             </div>
 

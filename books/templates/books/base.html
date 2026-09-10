@@ -17,13 +17,15 @@
         <a class="nav-link" href="{% url 'home' %}">
             Ana Sayfa
         </a>
-        <a class="nav-link" href="{% url 'book-list' %}">
-            Kitaplar
-        </a>
+        {% if user.account_approval.status == 'approved' %}
+            <a class="nav-link" href="{% url 'book-list' %}">
+                Kitaplar
+            </a>
 
-        <a class="nav-link" href="{% url 'book-create' %}">
-            Kitap Ekle
-        </a>
+            <a class="nav-link" href="{% url 'book-create' %}">
+                Kitap Ekle
+            </a>
+        {% endif %}
         </div>
 
     <div class="navbar-nav ms-auto align-items-center">
