@@ -8,7 +8,7 @@ class AccountApproval(models.Model):
         REJECTED = 'rejected','Reddedildi'
 
     user = models.OneToOneField(User, on_delete=models.CASCADE,related_name='account_approval')
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.APPROVED)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     reason = models.TextField(blank=True)
     reviewed_by = models.ForeignKey(User, null=True, blank=True,
                                     on_delete=models.SET_NULL, related_name='reviewed_accounts')
