@@ -1,0 +1,81 @@
+{% extends 'books/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4 p-md-5">
+
+                    <div class="d-flex align-items-center mb-4">
+                        {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}" alt="{{ profile.name }}"
+                                 class="rounded-circle me-4"
+                                 style="width: 96px; height: 96px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'accounts/default-avatar.svg' %}" alt="{{ profile.name }}"
+                                 class="rounded-circle me-4"
+                                 style="width: 96px; height: 96px;">
+                        {% endif %}
+
+                        <div>
+                            <h1 class="h4 fw-bold mb-1">{{ profile.name }}</h1>
+                            <p class="text-muted small mb-2">@{{ profile_user.username }}</p>
+
+                            {% if profile.age %}
+                                <span class="badge text-bg-light">{{ profile.age }} yaşında</span>
+                            {% endif %}
+                            {% if profile.settings.show_email and profile_user.email %}
+                                <span class="badge text-bg-light">{{ profile_user.email }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if is_own_profile %}
+                            <a href="{% url 'profile-edit' %}" class="btn btn-outline-secondary btn-sm ms-auto">
+                                Profili Düzenle
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    {% if profile.bio %}
+                        <p class="mb-4">{{ profile.bio|linebreaksbr }}</p>
+                    {% else %}
+                        <p class="text-muted fst-italic mb-4">Henüz bir tanıtım yazısı eklenmemiş.</p>
+                    {% endif %}
+
+                    {% if profile.social_links.all %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for link in profile.social_links.all %}
+                                <a href="{{ link.url }}" target="_blank" rel="noopener"
+                                   class="btn btn-sm btn-outline-primary">
+                                    {{ link.get_platform_display }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="h6 fw-bold mb-3">Kitaplık</h2>
+
+                    {% if can_see_books %}
+                        <p class="text-muted small mb-0">
+                            Kitap listesi Aşama 4'te, kitaplara sahiplik eklendiğinde burada görünecek.
+                        </p>
+                    {% else %}
+                        <div class="alert alert-secondary small mb-0">
+                            Bu kullanıcının kitaplıklarını görmek için arkadaş olmalısınız.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
