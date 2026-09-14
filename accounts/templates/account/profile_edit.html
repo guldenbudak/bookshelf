@@ -1,0 +1,131 @@
+{% extends 'books/base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+
+            <h1 class="h4 fw-bold mb-4">Profili Düzenle</h1>
+
+            <form method="POST" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h6 fw-bold mb-3">Profil bilgileri</h2>
+
+                        {% for field in profile_form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-semibold small">
+                                    {{ field.label }}
+                                </label>
+
+                                {% if field.errors %}
+                                    {% render_field field class="form-control is-invalid" %}
+                                {% else %}
+                                    {% render_field field class="form-control" %}
+                                {% endif %}
+
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+
+                                {% if field.name == 'avatar' %}
+                                    <div class="form-text small">
+                                        En fazla 2 MB. jpg, jpeg, png veya webp.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h6 fw-bold mb-3">Ayarlar</h2>
+
+                        {% for field in settings_form %}
+                            <div class="mb-3">
+                                {% if field.field.widget.input_type == 'checkbox' %}
+                                    <div class="form-check">
+                                        {% render_field field class="form-check-input" %}
+                                        <label for="{{ field.id_for_label }}" class="form-check-label small">
+                                            {{ field.label }}
+                                        </label>
+                                    </div>
+                                {% else %}
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-semibold small">
+                                        {{ field.label }}
+                                    </label>
+                                    {% render_field field class="form-select" %}
+                                {% endif %}
+
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h6 fw-bold mb-3">Sosyal bağlantılar</h2>
+
+                        {{ link_formset.management_form }}
+
+                        {% if link_formset.non_form_errors %}
+                            <div class="alert alert-danger py-2 small">
+                                {% for error in link_formset.non_form_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% for form in link_formset %}
+                            <div class="row g-2 align-items-start mb-3">
+                                {{ form.id }}
+
+                                <div class="col-4">
+                                    {% render_field form.platform class="form-select" %}
+                                    {% for error in form.platform.errors %}
+                                        <div class="text-danger small">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="col-6">
+                                    {% render_field form.url class="form-control" placeholder="https://..." %}
+                                    {% for error in form.url.errors %}
+                                        <div class="text-danger small">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="col-2">
+                                    {% if form.instance.pk %}
+                                        <div class="form-check mt-2">
+                                            {% render_field form.DELETE class="form-check-input" %}
+                                            <label class="form-check-label small text-danger">Sil</label>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                        <p class="form-text small mb-0">
+                            Her platformdan yalnızca bir adres eklenebilir.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success px-4">Kaydet</button>
+                    <a href="{% url 'my-profile' %}" class="btn btn-outline-secondary">Vazgeç</a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
