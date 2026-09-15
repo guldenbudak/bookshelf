@@ -39,14 +39,18 @@ Python 3.14 ve Django 6.0 ile geliştirildi.
 User (django.contrib.auth)
  │
  ├── 1:1 Profile
+ │        ├── 1:1 ProfileSettings   tema, gizlilik, bildirim tercihleri
+ │        ├── 1:N SocialLink        platform + adres (platform başına bir tane)
+ │        └── 1:N Address           ev / iş adresleri, biri varsayılan
+ │
  ├── 1:1 AccountApproval      onay durumu + onaylayan admin + tarih
  └── 1:N Book (owner)         [Aşama 4]
 
 Book ──── N:1 Category
 ```
 
-Sonraki aşamalarda eklenecek tablolar: `ProfileSettings`, `SocialLink`,
-`Address`, `FriendRequest`, `Friendship`, `Favorite`, `Comment`.
+Sonraki aşamalarda eklenecek tablolar: `FriendRequest`, `Friendship`,
+`Favorite`, `Comment`.
 
 ### AccountApproval
 
@@ -67,7 +71,7 @@ aksi hâlde ilk yönetici kendi admin panelinden kilitlenirdi.
 
 - [x] **Aşama 0** — Hazırlık
 - [x] **Aşama 1** — Kayıt, giriş ve admin onayı
-- [ ] Aşama 2 — Profil (çok tablolu)
+- [x] **Aşama 2** — Profil (çok tablolu)
 - [ ] Aşama 3 — Arkadaşlık sistemi
 - [ ] Aşama 4 — Kitap sahipliği ve görünürlük
 - [ ] Aşama 5 — Favoriler
@@ -85,6 +89,22 @@ aksi hâlde ilk yönetici kendi admin panelinden kilitlenirdi.
 
 Kitap view'larının tamamı `@login_required` + `@approved_required` ile
 korunmaktadır. Ana sayfa herkese açıktır.
+
+### Aşama 2'de yapılanlar
+
+| Adres | İşlev |
+|---|---|
+| `/accounts/profile/` | Kendi profilim |
+| `/accounts/profile/<username>/` | Başka bir kullanıcının profili |
+| `/accounts/profile/edit/` | Profil + ayarlar + sosyal bağlantılar, tek gönderimde |
+
+Onay bekleyen kullanıcı yalnızca **kendi** profilini görebilir; başkasının
+profiline giderse `/accounts/pending/` sayfasına yönlendirilir.
+
+Başkasının profilinde kitaplık yalnızca şu durumlarda görünür: profilin
+sahibiysen, arkadaşsan (Aşama 3'te bağlanacak) veya profil sahibi
+`books_public` ayarını açmışsa. Aksi hâlde "Bu kullanıcının kitaplıklarını
+görmek için arkadaş olmalısınız" uyarısı çıkar.
 
 ## Tasarım kararları
 
@@ -133,6 +153,30 @@ Bir ayrıntı: `approved_required` decorator'ı, `@login_required` ile
 zincirlenmese bile kendi içinde giriş kontrolü yapar. Anonim kullanıcıda
 `request.user.account_approval` çağrısı hata vereceği için bu kontrol
 zorunludur.
+
+### Neden `ProfileSettings` ayrı bir tablo? `Profile`'a dört kolon eklenemez miydi?
+
+Eklenebilirdi. `books_public`, `show_email`, `theme` ve `email_notifications`
+alanları `Profile` içinde dört kolon olarak da durabilirdi; `SocialLink` ve
+`Address`'in aksine bunların sayısı sabit ve her profilde tam bir takım var.
+
+**Ayrı tutmanın avantajı** konu ayrımı. `Profile` "kullanıcı kim" sorusunu
+(ad, fotoğraf, tanıtım yazısı), `ProfileSettings` ise "uygulamayı nasıl
+kullanmak istiyor" sorusunu (tema, gizlilik) yanıtlıyor. Profil kartını
+basarken ayarlara ihtiyaç yoksa o tablo hiç okunmuyor, ve ileride ayar sayısı
+arttığında `Profile` tablosu şişmiyor.
+
+**Dezavantajı** maliyeti. İkisini birlikte okumak için iki sorgu gerekiyor ve
+düzenleme sayfasında ayrı bir form sınıfı (`ProfileSettingsForm`) yazmak
+gerekti — yani kod biraz uzadı.
+
+**Değerlendirme:** bu ölçekte, dört alan için ayrı tablo açmak katı bir
+gereklilik değil; `Profile` içinde de durabilirdi ve proje daha kısa olurdu.
+Ayrı tablo asıl şu durumlarda karşılığını verir: ayar sayısı büyüdüğünde,
+ayarlar profil bilgisinden çok daha nadir okunduğunda, ya da ayarların
+sürümlenmesi/önbelleğe alınması gerektiğinde. Bu projede tercih edilmesinin
+sebebi ödevin 1:1 ilişki pratiği istemesi ve iki konunun kavramsal olarak
+gerçekten ayrı olması.
 
 ## Ekran görüntüleri
 
