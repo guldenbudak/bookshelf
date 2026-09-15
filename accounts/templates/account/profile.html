@@ -32,7 +32,7 @@
                             {% endif %}
                         </div>
 
-                        {% if is_own_profile %}
+                        {% if can_edit %}
                             <a href="{% url 'profile-edit' %}" class="btn btn-outline-secondary btn-sm ms-auto">
                                 Profili Düzenle
                             </a>

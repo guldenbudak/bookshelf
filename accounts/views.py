@@ -7,7 +7,7 @@ from django.views import View
 
 from django.db import transaction
 
-from .decorators import approved_required
+from .decorators import approved_required, is_approved
 from .forms import ProfileForm, ProfileSettingsForm, RegisterForm, SocialLinkFormSet
 from .models import AccountApproval
 
@@ -47,7 +47,6 @@ class PendingView(LoginRequiredMixin, View):
 
 
 @login_required
-@approved_required
 def profile_detail(request, username=None):
     """Kullanıcı adı verilmezse kendi profilini, verilirse başkasınınkini gösterir."""
 
@@ -56,8 +55,14 @@ def profile_detail(request, username=None):
     else:
         profile_user = get_object_or_404(User, username=username)
 
-    profile = profile_user.profile
     is_own_profile = profile_user == request.user
+    viewer_approved = is_approved(request.user)
+
+    # Onay bekleyen kullanıcı yalnızca kendi profilini görebilir.kullanıcı kendisi değilse ve yönetici onayından geçmediyse
+    if not is_own_profile and not viewer_approved:
+        return redirect('pending')
+
+    profile = profile_user.profile
 
     # Arkadaşlık kontrolü Aşama 3'te eklenecek; şimdilik herkes "arkadaş değil".
     is_friend = False
@@ -68,6 +73,7 @@ def profile_detail(request, username=None):
         'profile': profile,
         'is_own_profile': is_own_profile,
         'can_see_books': can_see_books,
+        'can_edit': is_own_profile and viewer_approved,
     })
 
 
