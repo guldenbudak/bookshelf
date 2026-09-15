@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import UploadedFile
 from django.forms import inlineformset_factory
 
 from .models import Profile, ProfileSettings, SocialLink
@@ -34,7 +35,10 @@ class ProfileForm(forms.ModelForm):
 
     def clean_avatar(self):
         avatar = self.cleaned_data.get('avatar')
-        if not avatar:
+
+        # Yeni dosya seçilmediyse elimizdeki kayıtlı dosyadır; onu tekrar
+        # denetlemek gereksiz ve dosya diskten silinmişse hata verir.
+        if not isinstance(avatar, UploadedFile):
             return avatar
 
         if not avatar.name.lower().endswith(self.ALLOWED_EXTENSIONS):
