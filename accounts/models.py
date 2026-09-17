@@ -2,6 +2,7 @@ from datetime import date
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import F, Q
 from django.urls import reverse
 
 class AccountApproval(models.Model):
@@ -29,11 +30,19 @@ class Profile(models.Model):
     avatar = models.ImageField("Profil fotoğrafı", upload_to='avatars/', blank=True)
     birth_date = models.DateField("Doğum tarihi", null=True, blank=True)
     phone = models.CharField("Telefon", max_length=20, blank=True)
+    friends = models.ManyToManyField('self', symmetrical=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.user.username
+
+    def get_friends(self):
+        """Arkadaş profillerini kullanıcılarıyla birlikte getirir."""
+        return self.friends.select_related('user').order_by('user__username')
+
+    def is_friend_with(self, other):
+        return self.friends.filter(pk=other.pk).exists()
 
     def get_absolute_url(self):
         return reverse('profile-detail', kwargs={'username': self.user.username})
@@ -100,6 +109,39 @@ class SocialLink(models.Model):
 
     def __str__(self):
         return f"{self.profile.user.username} - {self.get_platform_display()}"
+
+
+class FriendRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Beklemede'
+        ACCEPTED = 'accepted', 'Kabul edildi'
+        REJECTED = 'rejected', 'Reddedildi'
+
+    from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_requests')
+    to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_requests')
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            # Bir yön için tek satır. Reddedilen istek tekrar gönderilmek
+            # istendiğinde yeni satır açılmaz, bu satırın durumu güncellenir.
+            models.UniqueConstraint(
+                fields=['from_user', 'to_user'],
+                name='uniq_friend_request',
+            ),
+            models.CheckConstraint(
+                condition=~Q(from_user=F('to_user')),# kullanıcı kendisine istek atamasın
+                name='no_self_request',
+            ),
+        ]
+        verbose_name = "Arkadaşlık isteği"
+        verbose_name_plural = "Arkadaşlık istekleri"
+
+    def __str__(self):
+        return f"{self.from_user.username} → {self.to_user.username} ({self.status})"
 
 
 class Address(models.Model):
