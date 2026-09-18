@@ -1,44 +1,81 @@
 {% extends 'books/base.html' %}
+
+{% block title %}{{ book.title }} — Kitaplık{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
 
-    <div class="card">
-
-        <div class="card-body">
-            <h2 class="card-title">{{ book.title }}</h2>
-            <p class="card-text">Yazar: {{ book.author }}</p>
-            <p class="card-text">Kategori: {{ book.category }}</p>
-            <p class="card-text">Sayfa Sayısı: {{ book.page_count }}</p>
-
-            {% if book.cover %}
-                <img src="{{ book.cover.url }}" width="100">
-            {% endif %}
-
-            {% if book.is_read %}
-                <p class="card-text">Okundu: Evet</p>
-            {% else %}
-                <p class="card-text">Okundu: Hayır</p>
-            {% endif %}
-
-            {% if book.rating %}
-                <p class="card-text">Puan: {{ book.rating }}</p>
-            {% else %}
-                <p class="card-text">Puan: Henüz puan verilmemiş.</p>
-            {% endif %}
-
-            <br>
-
-            <a href="{% url 'book-list' %}" class="btn btn-secondary">
-                Kitap Listesine Dön
+            <a href="{% url 'book-list' %}" class="btn btn-hayalet btn-sm mb-3">
+                ← Kitaplara dön
             </a>
 
-            <a href="{% url 'book-update' book.pk %}" class="btn btn-warning">
-                Güncelle
-            </a>
+            <div class="kart">
+                <div class="kart-serit"></div>
 
-            <a href="{% url 'book-delete' book.pk %}" class="btn btn-danger">
-                Sil
-            </a>
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        {% if book.cover %}
+                            <img src="{{ book.cover.url }}" alt="{{ book.title }}"
+                                 class="w-100 h-100" style="object-fit: cover; min-height: 260px;">
+                        {% else %}
+                            <div class="kapak-bos h-100" style="min-height: 260px;">
+                                {% include 'books/icons/book.html' %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="card-body p-4 p-md-5">
+
+                            <div class="d-flex flex-wrap gap-1 mb-3">
+                                <span class="rozet rozet-mor">{{ book.category }}</span>
+                                {% if book.is_read %}
+                                    <span class="rozet rozet-yesil">Okundu</span>
+                                {% else %}
+                                    <span class="rozet rozet-gri">Okunmadı</span>
+                                {% endif %}
+                                {% if book.rating %}
+                                    <span class="rozet rozet-sari">
+                                        {% include 'books/icons/star.html' %}
+                                        {{ book.rating }}/5
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <h1 class="h3 fw-bold mb-1">{{ book.title }}</h1>
+                            <p class="soluk mb-4">{{ book.author }}</p>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <p class="soluk small mb-0">Sayfa sayısı</p>
+                                    <p class="fw-bold mb-0">{{ book.page_count }}</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="soluk small mb-0">Puan</p>
+                                    <p class="fw-bold mb-0">
+                                        {% if book.rating %}{{ book.rating }}/5{% else %}—{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <hr class="ayirac my-4">
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="{% url 'book-update' book.pk %}" class="btn btn-gradyan px-4">
+                                    Güncelle
+                                </a>
+                                <a href="{% url 'book-delete' book.pk %}" class="btn btn-hayalet px-4 text-danger">
+                                    Sil
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

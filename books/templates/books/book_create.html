@@ -1,52 +1,60 @@
 {% extends 'books/base.html' %}
 {% load widget_tweaks %}
+
+{% block title %}Kitap Ekle — Kitaplık{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
 
-    <div class="card">
-        <div class="card-body">
+            <div class="kart">
+                <div class="kart-serit"></div>
+                <div class="card-body p-4 p-md-5">
 
-            <h2 class="card-title mb-4">Kitap Ekle</h2>
-            <form method="POST" enctype="multipart/form-data" >
+                    <h1 class="h4 fw-bold mb-1">Kitap Ekle</h1>
+                    <p class="soluk small mb-4">Rafına yeni bir kitap koy.</p>
 
-                {% csrf_token %}
-                <div class="mb-3">
-                    {{ form.title.label_tag }}
-                    {% render_field form.title class="form-control" %}
-                </div>
-                <div class="mb-3">
-                    {{ form.author.label_tag }}
-                    {% render_field form.author class="form-control" %}
-                </div>
-                <div class="mb-3">
-                    {{ form.category.label_tag }}
-                    {% render_field form.category class="form-control" %}
-                </div>
-                <div class="mb-3">
-                    {{ form.page_count.label_tag }}
-                    {% render_field form.page_count class="form-control" %}
-                </div>
-                <div class="mb-3">
-                    {{ form.rating.label_tag }}
-                    {% render_field form.rating class="form-control" %}
-                    {{ form.rating.errors }}
-                </div>
-                <div class="mb-3">
-                    {{ form.is_read }}
-                    {{ form.is_read.label_tag }}
-                </div>
-                <div class="mb-3">
-                    {{ form.cover.label_tag }}
-                    {% render_field form.cover class="form-control" %}
-                </div>
+                    <form method="POST" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
 
-                <button type="submit" class="btn btn-success">
-                    Kaydet
-                </button>
+                        {% for field in form %}
+                            <div class="mb-3">
+                                {% if field.field.widget.input_type == 'checkbox' %}
+                                    <div class="form-check">
+                                        {% render_field field class="form-check-input" %}
+                                        <label for="{{ field.id_for_label }}" class="form-check-label small fw-semibold">
+                                            {{ field.label }}
+                                        </label>
+                                    </div>
+                                {% else %}
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-semibold small">
+                                        {{ field.label }}
+                                    </label>
 
-            </form>
+                                    {% if field.errors %}
+                                        {% render_field field class="form-control is-invalid" %}
+                                    {% else %}
+                                        {% render_field field class="form-control" %}
+                                    {% endif %}
+                                {% endif %}
+
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-gradyan px-4">Kaydet</button>
+                            <a href="{% url 'book-list' %}" class="btn btn-hayalet px-4">Vazgeç</a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
         </div>
     </div>
-
 </div>
 {% endblock %}
