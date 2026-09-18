@@ -1,56 +1,108 @@
 {% extends 'books/base.html' %}
 {% load static %}
 
+{% block title %}{{ profile.name }} — Kitaplık{% endblock %}
+
 {% block content %}
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
 
-            <div class="card border-0 shadow-sm mb-4">
+            <div class="kart mb-4">
+                <div class="kart-serit"></div>
                 <div class="card-body p-4 p-md-5">
 
-                    <div class="d-flex align-items-center mb-4">
-                        {% if profile.avatar %}
-                            <img src="{{ profile.avatar.url }}" alt="{{ profile.name }}"
-                                 class="rounded-circle me-4"
-                                 style="width: 96px; height: 96px; object-fit: cover;">
-                        {% else %}
-                            <img src="{% static 'accounts/default-avatar.svg' %}" alt="{{ profile.name }}"
-                                 class="rounded-circle me-4"
-                                 style="width: 96px; height: 96px;">
-                        {% endif %}
+                    <div class="d-flex flex-wrap align-items-center gap-4 mb-4">
+                        <span class="avatar-halka">
+                            {% if profile.avatar %}
+                                <img src="{{ profile.avatar.url }}" alt="{{ profile.name }}"
+                                     class="avatar" style="width: 96px; height: 96px;">
+                            {% else %}
+                                <img src="{% static 'accounts/default-avatar.svg' %}" alt="{{ profile.name }}"
+                                     class="avatar" style="width: 96px; height: 96px;">
+                            {% endif %}
+                        </span>
 
-                        <div>
+                        <div class="flex-grow-1">
                             <h1 class="h4 fw-bold mb-1">{{ profile.name }}</h1>
-                            <p class="text-muted small mb-2">@{{ profile_user.username }}</p>
+                            <p class="soluk small mb-2">@{{ profile_user.username }}</p>
 
-                            {% if profile.age %}
-                                <span class="badge text-bg-light">{{ profile.age }} yaşında</span>
-                            {% endif %}
-                            {% if profile.settings.show_email and profile_user.email %}
-                                <span class="badge text-bg-light">{{ profile_user.email }}</span>
-                            {% endif %}
+                            <div class="d-flex flex-wrap gap-1">
+                                {% if is_friend %}
+                                    <span class="rozet rozet-yesil">✓ Arkadaşsınız</span>
+                                {% endif %}
+                                {% if profile.age %}
+                                    <span class="rozet rozet-mor">{{ profile.age }} yaşında</span>
+                                {% endif %}
+                                {% if profile.settings.show_email and profile_user.email %}
+                                    <span class="rozet rozet-gri">{{ profile_user.email }}</span>
+                                {% endif %}
+                                <span class="rozet rozet-pembe">
+                                    {{ profile.friends.count }} arkadaş
+                                </span>
+                            </div>
                         </div>
 
-                        {% if can_edit %}
-                            <a href="{% url 'profile-edit' %}" class="btn btn-outline-secondary btn-sm ms-auto">
-                                Profili Düzenle
-                            </a>
-                        {% endif %}
+                        <div class="ms-auto d-flex flex-column gap-2">
+                            {% if can_edit %}
+                                <a href="{% url 'profile-edit' %}" class="btn btn-hayalet btn-sm px-3">
+                                    Profili Düzenle
+                                </a>
+                            {% endif %}
+
+                            {% if not is_own_profile %}
+                                {% if is_friend %}
+                                    <form method="POST" action="{% url 'friend-remove' profile_user.username %}" class="m-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="btn btn-hayalet btn-sm px-3 text-danger w-100">
+                                            Arkadaşlıktan çıkar
+                                        </button>
+                                    </form>
+                                {% elif received_request %}
+                                    <form method="POST" action="{% url 'friend-request-accept' received_request.pk %}" class="m-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="btn btn-gradyan btn-sm px-3 w-100">
+                                            İsteği kabul et
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{% url 'friend-request-reject' received_request.pk %}" class="m-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="btn btn-hayalet btn-sm px-3 w-100">
+                                            Reddet
+                                        </button>
+                                    </form>
+                                {% elif sent_request %}
+                                    <span class="rozet rozet-sari justify-content-center">İstek gönderildi</span>
+                                {% else %}
+                                    <form method="POST" action="{% url 'friend-request-send' profile_user.username %}" class="m-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="btn btn-gradyan btn-sm px-3 w-100 d-inline-flex align-items-center justify-content-center gap-2">
+                                            {% include 'books/icons/user-plus.html' %}
+                                            Arkadaş ekle
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
                     </div>
 
                     {% if profile.bio %}
                         <p class="mb-4">{{ profile.bio|linebreaksbr }}</p>
                     {% else %}
-                        <p class="text-muted fst-italic mb-4">Henüz bir tanıtım yazısı eklenmemiş.</p>
+                        <p class="soluk fst-italic mb-4">Henüz bir tanıtım yazısı eklenmemiş.</p>
                     {% endif %}
 
                     {% if profile.social_links.all %}
                         <div class="d-flex flex-wrap gap-2">
                             {% for link in profile.social_links.all %}
                                 <a href="{{ link.url }}" target="_blank" rel="noopener"
-                                   class="btn btn-sm btn-outline-primary">
+                                   class="btn btn-hayalet btn-sm px-3 d-inline-flex align-items-center gap-2">
                                     {{ link.get_platform_display }}
+                                    {% include 'books/icons/external.html' %}
                                 </a>
                             {% endfor %}
                         </div>
@@ -59,17 +111,25 @@
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm">
+            <div class="kart">
                 <div class="card-body p-4">
-                    <h2 class="h6 fw-bold mb-3">Kitaplık</h2>
+                    <h2 class="h6 fw-bold mb-3 d-flex align-items-center gap-2">
+                        {% include 'books/icons/library.html' %}
+                        Kitaplık
+                    </h2>
 
                     {% if can_see_books %}
-                        <p class="text-muted small mb-0">
+                        <p class="soluk small mb-0">
                             Kitap listesi Aşama 4'te, kitaplara sahiplik eklendiğinde burada görünecek.
                         </p>
                     {% else %}
-                        <div class="alert alert-secondary small mb-0">
-                            Bu kullanıcının kitaplıklarını görmek için arkadaş olmalısınız.
+                        <div class="bos-durum py-4">
+                            <span class="ikon-kutu mb-3">
+                                {% include 'books/icons/lock.html' %}
+                            </span>
+                            <p class="mb-0 small">
+                                Bu kullanıcının kitaplıklarını görmek için arkadaş olmalısınız.
+                            </p>
                         </div>
                     {% endif %}
                 </div>
