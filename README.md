@@ -72,7 +72,7 @@ aksi hâlde ilk yönetici kendi admin panelinden kilitlenirdi.
 - [x] **Aşama 0** — Hazırlık
 - [x] **Aşama 1** — Kayıt, giriş ve admin onayı
 - [x] **Aşama 2** — Profil (çok tablolu)
-- [ ] Aşama 3 — Arkadaşlık sistemi
+- [x] **Aşama 3** — Arkadaşlık sistemi
 - [ ] Aşama 4 — Kitap sahipliği ve görünürlük
 - [ ] Aşama 5 — Favoriler
 - [ ] Aşama 6 — Yorumlar
@@ -102,9 +102,23 @@ Onay bekleyen kullanıcı yalnızca **kendi** profilini görebilir; başkasını
 profiline giderse `/accounts/pending/` sayfasına yönlendirilir.
 
 Başkasının profilinde kitaplık yalnızca şu durumlarda görünür: profilin
-sahibiysen, arkadaşsan (Aşama 3'te bağlanacak) veya profil sahibi
-`books_public` ayarını açmışsa. Aksi hâlde "Bu kullanıcının kitaplıklarını
-görmek için arkadaş olmalısınız" uyarısı çıkar.
+sahibiysen, arkadaşsan veya profil sahibi `books_public` ayarını açmışsa.
+Aksi hâlde "Bu kullanıcının kitaplıklarını görmek için arkadaş olmalısınız"
+uyarısı çıkar.
+
+### Aşama 3'te yapılanlar
+
+| Adres | Yöntem | İşlev |
+|---|---|---|
+| `/accounts/friends/` | GET | Arkadaşlar, gelen ve gönderilen istekler (sekmeli) |
+| `/accounts/users/?q=` | GET | Kullanıcı arama |
+| `/accounts/friends/request/<username>/` | POST | İstek gönder |
+| `/accounts/friends/accept/<pk>/` | POST | İsteği kabul et |
+| `/accounts/friends/reject/<pk>/` | POST | İsteği reddet |
+| `/accounts/friends/remove/<username>/` | POST | Arkadaşlıktan çıkar |
+
+Durum değiştiren dört işlem yalnızca POST kabul eder (`@require_POST`); GET
+ile çağrıldıklarında 405 dönerler.
 
 ## Tasarım kararları
 
@@ -177,6 +191,107 @@ ayarlar profil bilgisinden çok daha nadir okunduğunda, ya da ayarların
 sürümlenmesi/önbelleğe alınması gerektiğinde. Bu projede tercih edilmesinin
 sebebi ödevin 1:1 ilişki pratiği istemesi ve iki konunun kavramsal olarak
 gerçekten ayrı olması.
+
+### Arkadaşlık: simetriyi nasıl sakladık?
+
+Arkadaşlık simetriktir — A ile B arkadaşsa B ile A da arkadaştır. Bunu
+saklamanın iki yolu var:
+
+| | Tek satır (A, B) | İki satır (A→B ve B→A) |
+|---|---|---|
+| "Arkadaşlarım kimler?" sorgusu | İki sütunu da taramak gerekir | Tek sütun, basit |
+| Veri tekrarı | Yok | Var |
+| Tutarsızlık riski | Yok | Biri silinip diğeri kalabilir |
+
+Django'nun `ManyToManyField('self', symmetrical=True)` alanını kullandık.
+Kaynak koduna bakıldığında görülüyor ki Django `add()` çağrıldığında ters
+yöndeki satırı da kendisi ekliyor, `remove()` çağrıldığında ikisini de
+siliyor. Yani veritabanında **iki satır** tutuluyor ama senkronizasyonu
+framework üstleniyor: sorgu tarafında iki satırın basitliği, tutarsızlık
+riski olmadan elde ediliyor. View'larda tek bir çağrı yetiyor:
+
+```python
+request.user.profile.friends.add(other.profile)     # iki yön de kurulur
+request.user.profile.friends.remove(other.profile)  # iki yön de biter
+```
+
+### A ve B aynı anda birbirine istek gönderirse?
+
+`FriendRequest` tablosunda yön bilgisi olduğu için A→B ve B→A **ayrı
+satırlardır**; veritabanı ikisine de izin verir. Karar view'da verildi:
+ikinci istek gönderilirken karşı taraftan bekleyen bir istek varsa, ikinci
+bir istek açmak yerine **ikisi doğrudan arkadaş yapılır** ve var olan istek
+`accepted` olarak kapatılır.
+
+Gerekçe: iki taraf da aynı şeyi istediğini zaten beyan etmiştir, fazladan
+bir onay adımı istemek gereksizdir. Yaygın sosyal uygulamalar da böyle
+davranır.
+
+### Kendine istek gönderilemez
+
+İki katmanda engellendi:
+
+- **Veritabanı:** `CheckConstraint(condition=~Q(from_user=F('to_user')))`.
+  Kod hatası, admin paneli veya elle SQL dahil hiçbir yoldan aşılamaz.
+- **View:** gönderen ile alıcı aynıysa işlem yapılmadan anlaşılır bir mesaj
+  gösterilir.
+
+İkincisi olmasaydı kullanıcı, veritabanı hatasını ham bir `IntegrityError`
+sayfası olarak görürdü. Birincisi olmasaydı koruma yalnızca uygulamanın
+doğru yazıldığı varsayımına dayanırdı.
+
+Arayüzde ayrıca kendi profilinde "Arkadaş ekle" butonu gösterilmiyor; ancak
+bu güvenlik değil, yalnızca kullanıcı deneyimidir — asıl kontrol yukarıdaki
+iki katmandadır.
+
+### Zaten arkadaş olana tekrar istek gönderilemez
+
+`friend_request_send` işleme başlamadan önce `is_friend_with()` ile kontrol
+eder ve "zaten arkadaşsınız" mesajıyla döner. Ayrıca arayüz bu durumda
+"Arkadaş ekle" yerine "Arkadaşlıktan çıkar" butonunu gösterir.
+
+### Reddedilen istek tekrar gönderilebilir mi?
+
+**Evet.** Gerekçe: red çoğu zaman kalıcı bir karar değildir; yanlışlıkla
+reddedilmiş olabilir ya da taraflar arasındaki durum değişmiş olabilir.
+Kalıcı engelleme istenirse bu ayrı bir "engelleme" özelliği olarak
+tasarlanmalıdır, reddedilen isteğin yan etkisi olarak değil.
+
+Teknik sonucu: `UniqueConstraint(from_user, to_user)` bir yön için yalnızca
+tek satıra izin verdiğinden, tekrar gönderimde yeni satır açılamaz. Bunun
+yerine var olan satırın durumu `pending`'e geri alınır:
+
+```python
+istek, yeni_mi = FriendRequest.objects.get_or_create(...)
+if not yeni_mi and istek.status != PENDING:
+    istek.status = PENDING
+    istek.save()
+```
+
+Aynı mekanizma arkadaşlıktan çıkıp yeniden istek gönderme durumunu da
+kapsar; bu yüzden `friend_remove`, geride kalan `accepted` satırını
+`rejected` olarak kapatır ve kayıt gerçek durumla uyumlu kalır.
+
+### İsteği yalnızca alıcısı cevaplayabilir
+
+Kabul ve reddetme view'ları isteği ararken alıcıyı da sorguya dahil eder:
+
+```python
+get_object_or_404(FriendRequest, pk=pk, to_user=request.user, status=PENDING)
+```
+
+Kontrolün ayrı bir `if` yerine sorgunun içinde olması bilinçlidir: yetki
+kontrolünü yazmayı unutmak mümkün değildir, çünkü kayıt zaten yalnızca
+yetkili kullanıcı için bulunur. Başkasının isteğine müdahale eden veya
+kendi gönderdiği isteği kabul etmeye çalışan kullanıcı 404 alır.
+
+### Tekrarlanan sorgular
+
+`Profile.get_friends()` arkadaş listesini `select_related('user')` ile
+getirir; arkadaşlar ve istek listelerinde ilişkili kullanıcı ve profil
+kayıtları da tek sorguda çekilir. Kullanıcı aramasında ilişki durumu her
+satır için ayrı ayrı sorgulanmaz, üç küme (arkadaşlar, gönderilen istekler,
+gelen istekler) baştan birer sorguyla alınıp şablonda karşılaştırılır.
 
 ## Ekran görüntüleri
 
