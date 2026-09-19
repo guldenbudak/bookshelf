@@ -28,7 +28,7 @@ urlpatterns = [
     path('friends/remove/<str:username>/', friend_remove, name='friend-remove'),
     path(
         'login/',
-        auth_views.LoginView.as_view(template_name='account/login.html'),
+        auth_views.LoginView.as_view(template_name='account/login.html'),#djangonun hazır giriş viewı parola kontrolü oturum açma hata mesajları
         name='login',
     ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

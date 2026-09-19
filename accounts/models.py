@@ -42,8 +42,8 @@ class Profile(models.Model):
         return self.friends.select_related('user').order_by('user__username')
 
     def is_friend_with(self, other):
-        return self.friends.filter(pk=other.pk).exists()
-
+        return self.friends.filter(pk=other.pk).exists()# arkadaş ekleme  kısmına mı çıkar kısmına mı ekleyeceğimizi anladığımız kısım
+        # bu kişi benim arkadaşım mı diye bakılan kısım
     def get_absolute_url(self):
         return reverse('profile-detail', kwargs={'username': self.user.username})
 
