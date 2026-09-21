@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.forms import ModelForm
 
@@ -8,6 +9,13 @@ class Category(models.Model):
         return self.name
 
 class Book(models.Model):
+    # Sahiplik üç adımda eklendi: önce null=True (0003), sonra var olan
+    # kitaplar ilk superuser'a atandı (0004), en son zorunlu yapıldı (0005).
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='books',
+    )
     title = models.CharField(max_length=200)
     author = models.CharField(max_length=100)
     category = models.ForeignKey(
