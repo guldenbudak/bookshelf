@@ -62,14 +62,20 @@
 
                             <hr class="ayirac my-4">
 
-                            <div class="d-flex flex-wrap gap-2">
-                                <a href="{% url 'book-update' book.pk %}" class="btn btn-gradyan px-4">
-                                    Güncelle
-                                </a>
-                                <a href="{% url 'book-delete' book.pk %}" class="btn btn-hayalet px-4 text-danger">
-                                    Sil
-                                </a>
-                            </div>
+                            {% if book.owner_id == user.id %}
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="{% url 'book-update' book.pk %}" class="btn btn-gradyan px-4">
+                                        Güncelle
+                                    </a>
+                                    <a href="{% url 'book-delete' book.pk %}" class="btn btn-hayalet px-4 text-danger">
+                                        Sil
+                                    </a>
+                                </div>
+                            {% else %}
+                                <p class="soluk small mb-0">
+                                    Bu kitap <strong>{{ book.owner.username }}</strong> kullanıcısına ait.
+                                </p>
+                            {% endif %}
 
                         </div>
                     </div>

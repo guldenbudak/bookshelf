@@ -1,9 +1,17 @@
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import BookForm
 from .models import Book
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from accounts.decorators import approved_required
+
+
+def sahibi_olmali(book, user):
+    """Kitabı yalnızca sahibi düzenleyip silebilir; değilse 403 döner."""
+    if book.owner != user:
+        raise PermissionDenied("Bu kitap sana ait değil.")
+
 
 def home(request):
     return render(request, 'books/home.html')
@@ -14,7 +22,11 @@ def book_create(request):
     if request.method == 'POST':
         form = BookForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            # Sahip formdan gelmiyor; kullanıcı başkasının adına kitap
+            # ekleyemesin diye oturumdaki kullanıcıdan alınıyor.
+            book = form.save(commit=False)
+            book.owner = request.user
+            book.save()
             messages.success(request, "Kitap başarıyla oluşturulmuştur.")
             return redirect('book-list')
     else:
@@ -43,6 +55,7 @@ def book_detail(request, pk):
 @approved_required
 def book_update(request, pk):
     book = get_object_or_404(Book, pk=pk)
+    sahibi_olmali(book, request.user)
 
     if request.method == 'POST':
         form =BookForm(request.POST, request.FILES, instance=book)
@@ -63,6 +76,8 @@ def book_update(request, pk):
 @approved_required
 def book_delete(request, pk):
     book = get_object_or_404(Book, pk=pk)
+    sahibi_olmali(book, request.user)
+
     if request.method == 'POST':
         book.delete()
         messages.success(request, "Kitap başarıyla silinmiştir.")

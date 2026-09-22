@@ -71,9 +71,11 @@
                             <a href="{% url 'book-detail' book.pk %}" class="btn btn-gradyan btn-sm flex-grow-1">
                                 Detay
                             </a>
-                            <a href="{% url 'book-update' book.pk %}" class="btn btn-hayalet btn-sm">
-                                Düzenle
-                            </a>
+                            {% if book.owner_id == user.id %}
+                                <a href="{% url 'book-update' book.pk %}" class="btn btn-hayalet btn-sm">
+                                    Düzenle
+                                </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
