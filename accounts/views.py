@@ -9,6 +9,8 @@ from django.views.decorators.http import require_POST
 
 from django.db import transaction
 
+from books.models import Book
+
 from .decorators import approved_required, is_approved
 from .forms import ProfileForm, ProfileSettingsForm, RegisterForm, SocialLinkFormSet
 from .models import AccountApproval, FriendRequest
@@ -69,12 +71,17 @@ def profile_detail(request, username=None):
     is_friend = not is_own_profile and request.user.profile.is_friend_with(profile)
     can_see_books = is_own_profile or is_friend or profile.settings.books_public
 
+    # Kitaplar yalnızca görme yetkisi varsa sorgulanıyor; yoksa veritabanına
+    # hiç gidilmiyor.
+    books = Book.objects.owned_by(profile_user).with_related() if can_see_books else []
+
     return render(request, 'account/profile.html', {
         'profile_user': profile_user,
         'profile': profile,
         'is_own_profile': is_own_profile,
         'is_friend': is_friend,
         'can_see_books': can_see_books,
+        'books': books,
         'can_edit': is_own_profile and viewer_approved,
         'sent_request': FriendRequest.objects.filter(
             from_user=request.user, to_user=profile_user,

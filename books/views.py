@@ -34,23 +34,43 @@ def book_create(request):
 
     return render(request, 'books/book_create.html', {'form': form})
 
+def sirala(books, sort):
+    """Listeleri aynı şekilde sıralar; /books/ ve /feed/ ortak kullanıyor."""
+    if sort == 'title':
+        return books.order_by('title')
+    if sort == 'page_count':
+        return books.order_by('page_count')
+    return books
+
+
 @login_required
 @approved_required
 def book_list(request):
-    books = Book.objects.select_related('category')
-    sort = request.GET.get('sort')
-    if sort == 'title':
-        books = books.order_by('title')
-    elif sort == 'page_count':
-        books = books.order_by('page_count')
+    """Kullanıcının kendi kitapları."""
+    books = Book.objects.owned_by(request.user).with_related()
+    books = sirala(books, request.GET.get('sort'))
+
     return render(request, 'books/book_list.html', {'books': books})
+
+
+@login_required
+@approved_required
+def book_feed(request):
+    """Arkadaşların kitapları."""
+    books = Book.objects.from_friends_of(request.user).with_related()
+    books = sirala(books, request.GET.get('sort'))
+
+    return render(request, 'books/book_feed.html', {'books': books})
+
 
 @login_required
 @approved_required
 def book_detail(request, pk):
-        book = get_object_or_404(Book, pk=pk)
+    # Arama tüm tabloda değil, kullanıcının görmeye yetkili olduğu kitaplar
+    # arasında yapılıyor. Yetkisi yoksa kitap "yok" sayılır ve 404 döner.
+    book = get_object_or_404(Book.objects.visible_to(request.user).with_related(), pk=pk)
 
-        return render(request, 'books/book_detail.html', {'book': book})
+    return render(request, 'books/book_detail.html', {'book': book})
 @login_required
 @approved_required
 def book_update(request, pk):

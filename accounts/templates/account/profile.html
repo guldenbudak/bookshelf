@@ -119,9 +119,29 @@
                     </h2>
 
                     {% if can_see_books %}
-                        <p class="soluk small mb-0">
-                            Kitap listesi Aşama 4'te, kitaplara sahiplik eklendiğinde burada görünecek.
-                        </p>
+                        <div class="row g-3">
+                            {% for book in books %}
+                                <div class="col-sm-6">
+                                    <a href="{% url 'book-detail' book.pk %}"
+                                       class="kart kart-hover d-flex align-items-center gap-3 p-3 text-decoration-none h-100">
+                                        <span class="kapak-bos rounded-3" style="width:46px;height:60px;flex-shrink:0;">
+                                            {% include 'books/icons/book.html' %}
+                                        </span>
+                                        <span>
+                                            <span class="d-block fw-bold small" style="color: var(--metin);">
+                                                {{ book.title }}
+                                            </span>
+                                            <span class="d-block soluk small">{{ book.author }}</span>
+                                            <span class="rozet rozet-mor mt-1">{{ book.category }}</span>
+                                        </span>
+                                    </a>
+                                </div>
+                            {% empty %}
+                                <div class="col-12">
+                                    <p class="soluk small mb-0">Bu kullanıcının rafı henüz boş.</p>
+                                </div>
+                            {% endfor %}
+                        </div>
                     {% else %}
                         <div class="bos-durum py-4">
                             <span class="ikon-kutu mb-3">

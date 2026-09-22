@@ -1,0 +1,60 @@
+{% comment %}
+Kitap kartı. Hem /books/ hem /feed/ bu parçayı kullanıyor.
+sahibi_goster=True verilirse kartta kitabın sahibi de gösterilir.
+{% endcomment %}
+
+<div class="col-md-6 col-lg-4">
+    <div class="kart kart-hover h-100 d-flex flex-column">
+        <div class="kart-serit"></div>
+
+        {% if book.cover %}
+            <img src="{{ book.cover.url }}" alt="{{ book.title }}"
+                 style="height: 190px; object-fit: cover;">
+        {% else %}
+            <div class="kapak-bos" style="height: 190px;">
+                {% include 'books/icons/book.html' %}
+            </div>
+        {% endif %}
+
+        <div class="card-body p-4 d-flex flex-column flex-grow-1">
+            <div class="d-flex flex-wrap gap-1 mb-2">
+                {% if sahibi_goster %}
+                    <a href="{% url 'profile-detail' book.owner.username %}"
+                       class="rozet rozet-pembe text-decoration-none">
+                        @{{ book.owner.username }}
+                    </a>
+                {% endif %}
+
+                <span class="rozet rozet-mor">{{ book.category }}</span>
+
+                {% if book.is_read %}
+                    <span class="rozet rozet-yesil">Okundu</span>
+                {% else %}
+                    <span class="rozet rozet-gri">Okunmadı</span>
+                {% endif %}
+
+                {% if book.rating %}
+                    <span class="rozet rozet-sari">
+                        {% include 'books/icons/star.html' %}
+                        {{ book.rating }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <h2 class="h6 fw-bold mb-1">{{ book.title }}</h2>
+            <p class="soluk small mb-1">{{ book.author }}</p>
+            <p class="soluk small mb-3">{{ book.page_count }} sayfa</p>
+
+            <div class="d-flex gap-2 mt-auto">
+                <a href="{% url 'book-detail' book.pk %}" class="btn btn-gradyan btn-sm flex-grow-1">
+                    Detay
+                </a>
+                {% if book.owner_id == user.id %}
+                    <a href="{% url 'book-update' book.pk %}" class="btn btn-hayalet btn-sm">
+                        Düzenle
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
