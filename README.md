@@ -44,7 +44,7 @@ User (django.contrib.auth)
  │        └── 1:N Address           ev / iş adresleri, biri varsayılan
  │
  ├── 1:1 AccountApproval      onay durumu + onaylayan admin + tarih
- └── 1:N Book (owner)         [Aşama 4]
+ └── 1:N Book (owner)         kitabın sahibi, zorunlu
 
 Book ──── N:1 Category
 ```
@@ -73,7 +73,7 @@ aksi hâlde ilk yönetici kendi admin panelinden kilitlenirdi.
 - [x] **Aşama 1** — Kayıt, giriş ve admin onayı
 - [x] **Aşama 2** — Profil (çok tablolu)
 - [x] **Aşama 3** — Arkadaşlık sistemi
-- [ ] Aşama 4 — Kitap sahipliği ve görünürlük
+- [x] **Aşama 4** — Kitap sahipliği ve görünürlük
 - [ ] Aşama 5 — Favoriler
 - [ ] Aşama 6 — Yorumlar
 - [ ] Aşama 7 — Kalite ve performans
@@ -119,6 +119,31 @@ uyarısı çıkar.
 
 Durum değiştiren dört işlem yalnızca POST kabul eder (`@require_POST`); GET
 ile çağrıldıklarında 405 dönerler.
+
+### Aşama 4'te yapılanlar
+
+Her kitabın artık zorunlu bir sahibi var (`Book.owner`). Alan üç migration'da
+eklendi; ayrıntısı aşağıda.
+
+| Adres | İçerik |
+|---|---|
+| `/books/` | Kullanıcının kendi kitapları |
+| `/feed/` | Arkadaşlarının kitapları |
+| `/books/<pk>/` | Yalnızca görme yetkisi varsa; yoksa 404 |
+
+Görünürlük kuralı `BookQuerySet` içinde tanımlı, view'lara dağıtılmadı:
+
+| Bakan kişi | Sonuç |
+|---|---|
+| Kitabın sahibi | Görür |
+| Sahibin arkadaşı | Görür |
+| Sahip kitaplığını herkese açmışsa | Görür |
+| Diğerleri | 404 |
+| Giriş yapmamış | Giriş sayfasına yönlendirilir |
+
+Güncelleme ve silme yalnızca sahibine açıktır; başkası denerse 403 döner.
+Kitap eklerken sahip formdan değil oturumdaki kullanıcıdan alınır, böylece
+kimse başkasının adına kitap kaydedemez.
 
 ## Tasarım kararları
 
@@ -292,6 +317,57 @@ getirir; arkadaşlar ve istek listelerinde ilişkili kullanıcı ve profil
 kayıtları da tek sorguda çekilir. Kullanıcı aramasında ilişki durumu her
 satır için ayrı ayrı sorgulanmaz, üç küme (arkadaşlar, gönderilen istekler,
 gelen istekler) baştan birer sorguyla alınıp şablonda karşılaştırılır.
+
+### Yetkisiz erişimde neden 403 yerine 404?
+
+**403 bir bilgi sızdırır: kaydın var olduğu.** "Böyle bir şey var ama sen
+giremezsin" demek, aslında o şeyin varlığını doğrulamaktır.
+
+Bir saldırgan adresleri sırayla deneyerek bundan yararlanabilir:
+
+```
+/books/1/  → 403   (var)
+/books/2/  → 404   (yok)
+/books/3/  → 403   (var)
+```
+
+Hiçbir kitabı göremediği hâlde hangi numaraların dolu olduğunu öğrenir. Buna
+numara tarama (enumeration) denir. Kitap sayısını öğrenmek tek başına zararsız
+görünebilir; ama aynı yöntem `/users/<ad>/` üzerinde kullanıcı adı doğrulamaya,
+`/orders/<no>/` üzerinde sipariş hacmi tahminine dönüşür.
+
+404 bu farkı ortadan kaldırır: yetkisi olmayan kullanıcı için kayıt "yok"
+sayılır, var olup olmadığı anlaşılamaz.
+
+**Bedeli** kullanıcı deneyimidir. Gerçekten yetkili olan ama oturumu düşmüş bir
+kullanıcı "sayfa bulunamadı" görür ve nedenini anlayamaz. 403 ise "yetkin yok,
+yöneticinden iste" gibi yol gösterici bir cevaptır.
+
+**Bu projedeki tercih:** kitap detayında 404 kullanıldı, çünkü yabancı bir
+kullanıcının bir kitabın varlığını bile öğrenmemesi gerekir. Güncelleme ve
+silmede ödevin isteği doğrultusunda 403 kullanıldı; oradaki sızıntı sınırlıdır,
+zira o adrese ulaşabilmek için zaten giriş yapmış ve onaylanmış olmak gerekir.
+
+Genel kural: **kaydın varlığı da gizliyse 404, yalnızca erişim yetkisi eksikse
+403.**
+
+### Sahiplik alanı neden üç migration'da eklendi?
+
+`Book.owner` zorunlu (`null=False`) bir alan, ama tabloda zaten dokuz sahipsiz
+kitap vardı. Alanı tek adımda zorunlu olarak eklemek mümkün değil: veritabanı
+mevcut satırlara ne yazacağını bilemez ve işlem durur.
+
+| Migration | Ne yapar |
+|---|---|
+| `0003_book_owner` | Alanı `null=True` ile ekler |
+| `0004_assign_existing_books_to_first_superuser` | Sahipsiz kitapları ilk superuser'a atar (`RunPython`) |
+| `0005_alter_book_owner` | Alanı `null=False` yapar |
+
+Veri taşıyan adım `apps.get_model()` kullanır, doğrudan `import` etmez: migration
+gelecekte de çalışacağı için modelin bugünkü hâline değil, o migration anındaki
+hâline ihtiyaç duyar. Ayrıca `reverse_code` tanımlıdır, yani adım geri alınabilir;
+atanacak kitap yoksa erken çıkar, böylece boş bir veritabanında da sorunsuz
+çalışır.
 
 ## Ekran görüntüleri
 
