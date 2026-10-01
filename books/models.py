@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import Q
+from django.db.models import Count, Exists, OuterRef, Q
 from django.forms import ModelForm
 
 
@@ -45,9 +45,29 @@ class BookQuerySet(models.QuerySet):
         arkadas_idleri = user.profile.friends.values_list('user_id', flat=True)
         return self.filter(owner_id__in=arkadas_idleri)
 
+    def favorited_by(self, user):
+        """Verilen kullanıcının favorilediği kitaplar."""
+        if not user.is_authenticated:
+            return self.none()
+        return self.filter(favorited_by__user=user)
+
     def with_related(self):
         """Listelerde N+1 sorguyu önlemek için ilişkili kayıtları da getirir."""
         return self.select_related('category', 'owner')
+
+    def with_favorites(self, user):
+        """Her kitaba favori sayısını ve kullanıcının favorileyip
+        favorilemediğini ekler — kitap başına ayrı sorgu atmadan."""
+        kitaplar = self.annotate(favori_sayisi=Count('favorited_by', distinct=True))
+
+        if not user.is_authenticated:
+            return kitaplar
+
+        return kitaplar.annotate(
+            favorimde=Exists(
+                Favorite.objects.filter(user=user, book=OuterRef('pk'))
+            )
+        )
 
 
 class Book(models.Model):
@@ -78,6 +98,25 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            # Aynı kullanıcı aynı kitabı iki kez favorileyemez. Kural
+            # veritabanında olduğu için view'daki hata olsa bile aşılamaz.
+            models.UniqueConstraint(fields=['user', 'book'], name='uniq_favorite'),
+        ]
+        verbose_name = "Favori"
+        verbose_name_plural = "Favoriler"
+
+    def __str__(self):
+        return f"{self.user.username} → {self.book.title}"
 
 
 

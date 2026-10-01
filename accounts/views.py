@@ -3,13 +3,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.decorators.http import require_POST
 
 from django.db import transaction
 
 from books.models import Book
+from bookshelf.shortcuts import geri_don
 
 from .decorators import approved_required, is_approved
 from .forms import ProfileForm, ProfileSettingsForm, RegisterForm, SocialLinkFormSet
@@ -73,7 +73,26 @@ def profile_detail(request, username=None):
 
     # Kitaplar yalnızca görme yetkisi varsa sorgulanıyor; yoksa veritabanına
     # hiç gidilmiyor.
-    books = Book.objects.owned_by(profile_user).with_related() if can_see_books else []
+    if can_see_books:
+        books = (
+            Book.objects.owned_by(profile_user)
+            .with_related()
+            .with_favorites(request.user)
+        )
+        # Profil sahibinin favorileri, ziyaretçinin de görmeye yetkili olduğu
+        # kitaplarla sınırlanıyor: favoriler, erişilemeyen bir kitabı görmenin
+        # arka kapısı olmamalı. Görülemeyenler listelenmiyor; bu sayfadaki
+        # kayıtlar ziyaretçinin kendi verisi değil, yer tutucu göstermek
+        # ona bir şey anlatmaz, yalnızca gizli kayıt sayısını sızdırır.
+        favorites = (
+            Book.objects.favorited_by(profile_user)
+            .visible_to(request.user)#bu satır sayesinde biz erişmememiz gereken kitaba erişmiyoruz.
+            .with_related()
+            .with_favorites(request.user)
+        )
+    else:
+        books = []
+        favorites = []
 
     return render(request, 'account/profile.html', {
         'profile_user': profile_user,
@@ -82,6 +101,7 @@ def profile_detail(request, username=None):
         'is_friend': is_friend,
         'can_see_books': can_see_books,
         'books': books,
+        'favorites': favorites,
         'can_edit': is_own_profile and viewer_approved,
         'sent_request': FriendRequest.objects.filter(
             from_user=request.user, to_user=profile_user,
@@ -129,20 +149,6 @@ def profile_edit(request):
     })
 
 
-def _geri_don(request, varsayilan_url_adi, **kwargs):
-    """Formdaki 'next' alanına döner; yoksa verilen sayfaya gider.
-
-    Adresin kendi sitemize ait olduğunu doğrulamadan yönlendirmek, kullanıcıyı
-    başka bir siteye taşımak için kullanılabilirdi (open redirect).
-    """
-    hedef = request.POST.get('next')
-    if hedef and url_has_allowed_host_and_scheme(
-        hedef, allowed_hosts={request.get_host()}, require_https=request.is_secure()
-    ):
-        return redirect(hedef)
-    return redirect(varsayilan_url_adi, **kwargs)
-
-
 @login_required
 @approved_required
 @require_POST
@@ -153,11 +159,11 @@ def friend_request_send(request, username):
     # Veritabanı da engelliyor; buradaki kontrol kullanıcıya mesaj göstermek için.
     if to_user == request.user:
         messages.error(request, "Kendine arkadaşlık isteği gönderemezsin.")
-        return _geri_don(request, 'my-profile')
+        return geri_don(request, 'my-profile')
 
     if profile.is_friend_with(to_user.profile):
         messages.info(request, f"{to_user.username} ile zaten arkadaşsınız.")
-        return _geri_don(request, 'profile-detail', username=username)
+        return geri_don(request, 'profile-detail', username=username)
 
     with transaction.atomic():
         # Karşı taraf bize zaten istek göndermişse ikimiz de istiyoruz demektir.
@@ -174,7 +180,7 @@ def friend_request_send(request, username):
                 request,
                 f"{to_user.username} sana zaten istek göndermişti, artık arkadaşsınız."
             )
-            return _geri_don(request, 'profile-detail', username=username)
+            return geri_don(request, 'profile-detail', username=username)
 
         # Aynı yön için tek satır olabildiğinden, reddedilmiş bir istek
         # yeniden gönderilirken yeni satır açılmaz, bu satır tekrar beklemeye alınır.
@@ -191,7 +197,7 @@ def friend_request_send(request, username):
             istek.save()
             messages.success(request, f"{to_user.username} kullanıcısına istek tekrar gönderildi.")
 
-    return _geri_don(request, 'profile-detail', username=username)
+    return geri_don(request, 'profile-detail', username=username)
 
 
 @login_required
@@ -210,7 +216,7 @@ def friend_request_accept(request, pk):
         request.user.profile.friends.add(istek.from_user.profile)
 
     messages.success(request, f"{istek.from_user.username} ile arkadaş oldunuz.")
-    return _geri_don(request, 'friends')
+    return geri_don(request, 'friends')
 
 
 @login_required
@@ -225,7 +231,7 @@ def friend_request_reject(request, pk):
     istek.save()
 
     messages.info(request, f"{istek.from_user.username} kullanıcısının isteği reddedildi.")
-    return _geri_don(request, 'friends')
+    return geri_don(request, 'friends')
 
 
 @login_required
@@ -245,7 +251,7 @@ def friend_remove(request, username):
         ).update(status=FriendRequest.Status.REJECTED)
 
     messages.info(request, f"{other.username} arkadaşlıktan çıkarıldı.")
-    return _geri_don(request, 'friends')
+    return geri_don(request, 'friends')
 
 
 @login_required

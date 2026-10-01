@@ -1,0 +1,56 @@
+{% extends 'books/base.html' %}
+
+{% block title %}Favorilerim — Kitaplık{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+
+    <div class="mb-4">
+        <h1 class="h3 fw-bold mb-1">Favorilerim</h1>
+        <p class="soluk small mb-0">{{ kayitlar|length }} kitap</p>
+    </div>
+
+    <div class="row g-4">
+        {% for kayit in kayitlar %}
+            {% if kayit.erisilebilir %}
+                {% include 'books/_book_card.html' with book=kayit.book sahibi_goster=True %}
+            {% else %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="kart h-100 d-flex flex-column" style="opacity: .75;">
+                        <div class="kart-serit" style="background: var(--kenar);"></div>
+
+                        <div class="kapak-bos" style="height: 190px;">
+                            {% include 'books/icons/lock.html' %}
+                        </div>
+
+                        <div class="card-body p-4 d-flex flex-column flex-grow-1">
+                            <span class="rozet rozet-gri mb-2">Erişilemiyor</span>
+
+                            <h2 class="h6 fw-bold mb-1">Bu kitaba artık erişemiyorsun</h2>
+                            <p class="soluk small mb-0">
+                                Sahibiyle arkadaşlığınız sona erdiği için gizlendi.
+                                Tekrar arkadaş olursanız favorine geri döner.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% empty %}
+            <div class="col-12">
+                <div class="kart">
+                    <div class="bos-durum">
+                        <span class="ikon-kutu ikon-kutu-lg mb-3">
+                            {% include 'books/icons/heart-outline.html' %}
+                        </span>
+                        <p class="mb-3">Henüz favori kitabın yok.</p>
+                        <a href="{% url 'book-feed' %}" class="btn btn-gradyan px-4">
+                            Akışa göz at
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

@@ -45,15 +45,31 @@ sahibi_goster=True verilirse kartta kitabın sahibi de gösterilir.
             <p class="soluk small mb-1">{{ book.author }}</p>
             <p class="soluk small mb-3">{{ book.page_count }} sayfa</p>
 
-            <div class="d-flex gap-2 mt-auto">
+            <div class="d-flex gap-2 mt-auto align-items-center">
                 <a href="{% url 'book-detail' book.pk %}" class="btn btn-gradyan btn-sm flex-grow-1">
                     Detay
                 </a>
+
                 {% if book.owner_id == user.id %}
                     <a href="{% url 'book-update' book.pk %}" class="btn btn-hayalet btn-sm">
                         Düzenle
                     </a>
                 {% endif %}
+
+                <form method="POST" action="{% url 'favorite-toggle' book.pk %}" class="m-0">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit"
+                            class="btn btn-hayalet btn-sm favori-btn d-inline-flex align-items-center gap-1"
+                            title="{% if book.favorimde %}Favorilerden çıkar{% else %}Favorilere ekle{% endif %}">
+                        {% if book.favorimde %}
+                            {% include 'books/icons/heart.html' %}
+                        {% else %}
+                            {% include 'books/icons/heart-outline.html' %}
+                        {% endif %}
+                        <span class="small">{{ book.favori_sayisi|default:0 }}</span>
+                    </button>
+                </form>
             </div>
         </div>
     </div>

@@ -30,6 +30,7 @@
                 {% if user.account_approval.status == 'approved' %}
                     <a class="nav-link" href="{% url 'book-list' %}">Kitaplarım</a>
                     <a class="nav-link" href="{% url 'book-feed' %}">Akış</a>
+                    <a class="nav-link" href="{% url 'favorite-list' %}">Favorilerim</a>
                     <a class="nav-link" href="{% url 'book-create' %}">Kitap Ekle</a>
                     <a class="nav-link" href="{% url 'friends' %}">Arkadaşlar</a>
                     <a class="nav-link" href="{% url 'user-search' %}">Kişi Ara</a>

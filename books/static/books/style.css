@@ -180,6 +180,10 @@ a { color: var(--mor-koyu); }
 
 .btn-light:hover { background: #F1EEFF; color: #1E1B33; }
 
+.favori-btn .ikon { width: 16px; height: 16px; }
+
+.favori-btn:hover { border-color: #F472B6; color: #F9A8D4; }
+
 /* ---------- Rozetler ---------- */
 
 .rozet {

@@ -44,13 +44,13 @@ User (django.contrib.auth)
  │        └── 1:N Address           ev / iş adresleri, biri varsayılan
  │
  ├── 1:1 AccountApproval      onay durumu + onaylayan admin + tarih
- └── 1:N Book (owner)         kitabın sahibi, zorunlu
+ ├── 1:N Book (owner)         kitabın sahibi, zorunlu
+ └── 1:N Favorite            kullanıcı + kitap (çift başına tek kayıt)
 
 Book ──── N:1 Category
 ```
 
-Sonraki aşamalarda eklenecek tablolar: `FriendRequest`, `Friendship`,
-`Favorite`, `Comment`.
+Sonraki aşamalarda eklenecek tablolar: `Comment`.
 
 ### AccountApproval
 
@@ -74,7 +74,7 @@ aksi hâlde ilk yönetici kendi admin panelinden kilitlenirdi.
 - [x] **Aşama 2** — Profil (çok tablolu)
 - [x] **Aşama 3** — Arkadaşlık sistemi
 - [x] **Aşama 4** — Kitap sahipliği ve görünürlük
-- [ ] Aşama 5 — Favoriler
+- [x] **Aşama 5** — Favoriler
 - [ ] Aşama 6 — Yorumlar
 - [ ] Aşama 7 — Kalite ve performans
 
@@ -144,6 +144,25 @@ Görünürlük kuralı `BookQuerySet` içinde tanımlı, view'lara dağıtılmad
 Güncelleme ve silme yalnızca sahibine açıktır; başkası denerse 403 döner.
 Kitap eklerken sahip formdan değil oturumdaki kullanıcıdan alınır, böylece
 kimse başkasının adına kitap kaydedemez.
+
+### Aşama 5'te yapılanlar
+
+| Adres | Yöntem | İşlev |
+|---|---|---|
+| `/favorites/` | GET | Kullanıcının favorileri |
+| `/books/<pk>/favorite/` | POST | Favoriye ekler, zaten favorideyse çıkarır |
+
+Kullanıcı **görebildiği** her kitabı favorileyebilir; sahibi olması gerekmez.
+Göremediği bir kitabın adresini denerse 404 alır. Aynı kitap iki kez
+favorilenemez: `Favorite` tablosunda `user` + `book` çifti için tekillik
+kısıtı var, view ise `get_or_create` ile aynı butonu aç/kapa düğmesine
+çeviriyor.
+
+Kitap kartlarında favori sayısı ve kullanıcının kendi durumu `annotate` ile
+ana sorguya ekleniyor, kart başına sorgu atılmıyor.
+
+Bir kullanıcının favorileri profilinde, kitaplıkla aynı kurala tabi olarak
+görünür: sahibi, arkadaşı veya `books_public` açıksa herkes.
 
 ## Tasarım kararları
 
@@ -368,6 +387,44 @@ gelecekte de çalışacağı için modelin bugünkü hâline değil, o migration
 hâline ihtiyaç duyar. Ayrıca `reverse_code` tanımlıdır, yani adım geri alınabilir;
 atanacak kitap yoksa erken çıkar, böylece boş bir veritabanında da sorunsuz
 çalışır.
+
+### Arkadaşlıktan çıkınca favorideki kitap ne olmalı?
+
+**Karar: favori kaydı silinmez.** Kitap listede "erişilemiyor" kartı olarak
+kalır; adı, yazarı ve kapağı gösterilmez. Arkadaşlık yeniden kurulursa kart
+kendiliğinden normale döner, çünkü kayıt zaten yerindedir.
+
+**Gerekçe.** Favori, kullanıcının kendi verisidir — o kitabı o beğenip
+listesine eklemiştir. Arkadaşlık ise ayrı bir ilişkidir. "Arkadaşlıktan
+çıkar" düğmesine basan kişi favorilerinin de silineceğini beklemez; bir
+işlemin ilgisiz başka bir veriyi yok etmesi sürpriz ve geri dönüşsüz olur.
+Arkadaşlıklar ayrıca geçicidir, yanlışlıkla da bozulabilir; her seferinde
+favorilerin sıfırlanması gereksiz bir kayıptır.
+
+**Neden sessizce gizlemek yerine kart gösteriliyor.** Kullanıcı kendi
+sayfasında "12 favorim vardı, şimdi 10 görünüyor" durumuyla karşılaşmamalı.
+Görünür bir açıklama, sessiz bir eksilmeden daha dürüsttür.
+
+**Neden kitabın adı bile yazmıyor.** Sahibiyle arkadaşlık bittiği an o
+kitabın içeriğine erişim hakkı da biter; başlık da içeriğin parçasıdır.
+Kart yalnızca "burada erişemediğin bir kayıt var" der.
+
+### Başkasının profilinde favoriler nasıl süzülüyor?
+
+Profil sahibinin favorileri, **ziyaretçinin de görmeye yetkili olduğu**
+kitaplarla sınırlanır:
+
+```python
+Book.objects.favorited_by(profile_user).visible_to(request.user)
+```
+
+İkinci süzgeç olmasaydı favoriler bir arka kapıya dönüşürdü: Ayşe ile
+arkadaş olmak, Ayşe'nin favorilediği herkesin kitabını görmeye yeterdi.
+
+Bu listede erişilemeyen kayıtlar için yer tutucu **gösterilmez** — kendi
+favori sayfasındakinin aksine. Aradaki fark şu: kendi sayfanda o kayıtlar
+senin verindir ve eksilmeyi açıklamak gerekir; başkasının profilinde ise
+sana ait olmayan kayıtların sayısını duyurmak yalnızca bilgi sızdırır.
 
 ## Ekran görüntüleri
 

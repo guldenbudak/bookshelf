@@ -121,21 +121,7 @@
                     {% if can_see_books %}
                         <div class="row g-3">
                             {% for book in books %}
-                                <div class="col-sm-6">
-                                    <a href="{% url 'book-detail' book.pk %}"
-                                       class="kart kart-hover d-flex align-items-center gap-3 p-3 text-decoration-none h-100">
-                                        <span class="kapak-bos rounded-3" style="width:46px;height:60px;flex-shrink:0;">
-                                            {% include 'books/icons/book.html' %}
-                                        </span>
-                                        <span>
-                                            <span class="d-block fw-bold small" style="color: var(--metin);">
-                                                {{ book.title }}
-                                            </span>
-                                            <span class="d-block soluk small">{{ book.author }}</span>
-                                            <span class="rozet rozet-mor mt-1">{{ book.category }}</span>
-                                        </span>
-                                    </a>
-                                </div>
+                                {% include 'books/_book_mini.html' %}
                             {% empty %}
                                 <div class="col-12">
                                     <p class="soluk small mb-0">Bu kullanıcının rafı henüz boş.</p>
@@ -154,6 +140,34 @@
                     {% endif %}
                 </div>
             </div>
+
+            {% if can_see_books %}
+                <div class="kart mt-4">
+                    <div class="card-body p-4">
+                        <h2 class="h6 fw-bold mb-3 d-flex align-items-center gap-2">
+                            {% include 'books/icons/heart.html' %}
+                            Favoriler
+                            <span class="rozet rozet-gri ms-1">{{ favorites|length }}</span>
+                        </h2>
+
+                        <div class="row g-3">
+                            {% for book in favorites %}
+                                {% include 'books/_book_mini.html' with sahibi_goster=True %}
+                            {% empty %}
+                                <div class="col-12">
+                                    <p class="soluk small mb-0">
+                                        {% if is_own_profile %}
+                                            Henüz favori kitabın yok.
+                                        {% else %}
+                                            Senin de görebildiğin favori kitabı yok.
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
 
         </div>
     </div>
