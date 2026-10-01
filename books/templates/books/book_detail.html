@@ -1,4 +1,6 @@
 {% extends 'books/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
 
 {% block title %}{{ book.title }} — Kitaplık{% endblock %}
 
@@ -79,6 +81,97 @@
 
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="kart mt-4">
+                <div class="card-body p-4 p-md-5">
+
+                    <h2 class="h6 fw-bold mb-4 d-flex align-items-center gap-2">
+                        {% include 'books/icons/inbox.html' %}
+                        Yorumlar
+                        <span class="rozet rozet-gri ms-1">{{ comments|length }}</span>
+                    </h2>
+
+                    <form method="POST" action="{% url 'comment-create' book.pk %}" class="mb-4" novalidate>
+                        {% csrf_token %}
+
+                        {% render_field comment_form.text class="form-control" %}
+
+                        {% for error in comment_form.text.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+
+                        <button type="submit" class="btn btn-gradyan btn-sm px-4 mt-2">
+                            Yorum Yap
+                        </button>
+                    </form>
+
+                    <hr class="ayirac mb-4">
+
+                    {% for comment in comments %}
+                        <div class="d-flex gap-3 mb-4">
+                            {% if comment.is_deleted %}
+                                <span class="kapak-bos rounded-circle" style="width:40px;height:40px;flex-shrink:0;">
+                                    {% include 'books/icons/trash.html' %}
+                                </span>
+                                <div class="flex-grow-1">
+                                    <p class="soluk fst-italic small mb-0">Bu yorum silindi.</p>
+                                </div>
+                            {% else %}
+                                {% if comment.author.profile.avatar %}
+                                    <img src="{{ comment.author.profile.avatar.url }}"
+                                         class="avatar" style="width:40px;height:40px;flex-shrink:0;">
+                                {% else %}
+                                    <img src="{% static 'accounts/default-avatar.svg' %}"
+                                         class="avatar" style="width:40px;height:40px;flex-shrink:0;">
+                                {% endif %}
+
+                                <div class="flex-grow-1">
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                        <a href="{% url 'profile-detail' comment.author.username %}"
+                                           class="fw-bold small text-decoration-none" style="color: var(--metin);">
+                                            {{ comment.author.profile.name }}
+                                        </a>
+                                        <span class="soluk" style="font-size: .78rem;">
+                                            {{ comment.created_at|date:"d M Y, H:i" }}
+                                            {% if comment.updated_at|date:"U" > comment.created_at|date:"U" %}
+                                                · düzenlendi
+                                            {% endif %}
+                                        </span>
+                                    </div>
+
+                                    <p class="mb-2 small">{{ comment.text|linebreaksbr }}</p>
+
+                                    <div class="d-flex gap-2">
+                                        {% if comment.author_id == user.id %}
+                                            <a href="{% url 'comment-update' comment.pk %}"
+                                               class="btn btn-hayalet btn-sm px-3 py-1" style="font-size: .78rem;">
+                                                Düzenle
+                                            </a>
+                                        {% endif %}
+
+                                        {% if comment.author_id == user.id or book.owner_id == user.id %}
+                                            <form method="POST" action="{% url 'comment-delete' comment.pk %}" class="m-0">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                <button type="submit"
+                                                        class="btn btn-hayalet btn-sm px-3 py-1 text-danger"
+                                                        style="font-size: .78rem;">
+                                                    Sil
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="bos-durum py-3">
+                            <p class="mb-0 small">İlk yorumu sen yaz.</p>
+                        </div>
+                    {% endfor %}
+
                 </div>
             </div>
 

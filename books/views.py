@@ -2,8 +2,8 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
-from .forms import BookForm
-from .models import Book, Favorite
+from .forms import BookForm, CommentForm
+from .models import Book, Comment, Favorite
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from accounts.decorators import approved_required
@@ -76,7 +76,95 @@ def book_detail(request, pk):
         pk=pk,
     )
 
-    return render(request, 'books/book_detail.html', {'book': book})
+    return render(request, 'books/book_detail.html', detay_baglami(request, book))
+
+
+def detay_baglami(request, book, comment_form=None):
+    """Kitap detay sayfasının içeriği.
+
+    Yorum formu hatalıyken sayfayı yeniden basmak gerektiği için ayrı
+    fonksiyona alındı; iki yerden aynı bağlam üretiliyor.
+    """
+    return {
+        'book': book,
+        # Silinen yorumlar da listeleniyor; şablon onları "Bu yorum silindi"
+        # olarak gösteriyor.
+        'comments': book.comments.select_related('author__profile'),
+        'comment_form': comment_form if comment_form is not None else CommentForm(),
+    }
+
+
+@login_required
+@approved_required
+@require_POST
+def comment_create(request, pk):
+    """Görülebilen her kitaba yorum yazılabilir; sahibi olmak gerekmez."""
+    book = get_object_or_404(
+        Book.objects.visible_to(request.user).with_related().with_favorites(request.user),
+        pk=pk,
+    )
+
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.book = book
+        comment.author = request.user
+        comment.save()
+        messages.success(request, "Yorumun eklendi.")
+        return redirect('book-detail', pk=pk)
+
+    # Hatalıysa yazdığı metin kaybolmasın diye sayfa dolu formla basılıyor.
+    return render(request, 'books/book_detail.html', detay_baglami(request, book, form))
+
+
+@login_required
+@approved_required
+def comment_update(request, pk):
+    """Yorumu yalnızca yazarı düzenleyebilir."""
+    comment = get_object_or_404(
+        Comment.objects.select_related('book'),
+        pk=pk,
+        book__in=Book.objects.visible_to(request.user),
+    )
+
+    if not comment.can_edit(request.user):
+        raise PermissionDenied("Bu yorum sana ait değil.")
+
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Yorumun güncellendi.")
+            return redirect('book-detail', pk=comment.book_id)
+    else:
+        form = CommentForm(instance=comment)
+
+    return render(request, 'books/comment_update.html', {
+        'form': form,
+        'comment': comment,
+    })
+
+
+@login_required
+@approved_required
+@require_POST
+def comment_delete(request, pk):
+    """Yorumu yazarı siler; kitabın sahibi de moderasyon için silebilir."""
+    comment = get_object_or_404(
+        Comment.objects.select_related('book'),
+        pk=pk,
+        book__in=Book.objects.visible_to(request.user),
+    )
+
+    if not comment.can_delete(request.user):
+        raise PermissionDenied("Bu yorumu silme yetkin yok.")
+
+    # Satır kaldırılmıyor, yalnızca işaretleniyor (soft delete).
+    comment.is_deleted = True
+    comment.save()
+
+    messages.info(request, "Yorum silindi.")
+    return geri_don(request, 'book-detail', pk=comment.book_id)
 
 
 @login_required

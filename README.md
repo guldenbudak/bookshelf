@@ -45,12 +45,13 @@ User (django.contrib.auth)
  │
  ├── 1:1 AccountApproval      onay durumu + onaylayan admin + tarih
  ├── 1:N Book (owner)         kitabın sahibi, zorunlu
- └── 1:N Favorite            kullanıcı + kitap (çift başına tek kayıt)
+ ├── 1:N Favorite            kullanıcı + kitap (çift başına tek kayıt)
+ └── 1:N Comment             yorum; silinince satır kalır, işaretlenir
 
 Book ──── N:1 Category
 ```
 
-Sonraki aşamalarda eklenecek tablolar: `Comment`.
+Tüm tablolar eklendi.
 
 ### AccountApproval
 
@@ -75,7 +76,7 @@ aksi hâlde ilk yönetici kendi admin panelinden kilitlenirdi.
 - [x] **Aşama 3** — Arkadaşlık sistemi
 - [x] **Aşama 4** — Kitap sahipliği ve görünürlük
 - [x] **Aşama 5** — Favoriler
-- [ ] Aşama 6 — Yorumlar
+- [x] **Aşama 6** — Yorumlar
 - [ ] Aşama 7 — Kalite ve performans
 
 ### Aşama 1'de yapılanlar
@@ -163,6 +164,29 @@ ana sorguya ekleniyor, kart başına sorgu atılmıyor.
 
 Bir kullanıcının favorileri profilinde, kitaplıkla aynı kurala tabi olarak
 görünür: sahibi, arkadaşı veya `books_public` açıksa herkes.
+
+### Aşama 6'da yapılanlar
+
+| Adres | Yöntem | İşlev |
+|---|---|---|
+| `/books/<pk>/comment/` | POST | Yorum ekler |
+| `/comments/<pk>/edit/` | GET/POST | Yorumu düzenler |
+| `/comments/<pk>/delete/` | POST | Yorumu siler (işaretler) |
+
+Yorumlar kitap detayında, en yeniden eskiye, yazarın avatarı ve tarihiyle
+listelenir. Düzenlenen yorumlarda tarihin yanında "düzenlendi" notu çıkar.
+
+Yetkiler ikiye ayrılır:
+
+| | Düzenleyebilir | Silebilir |
+|---|---|---|
+| Yorumun yazarı | ✓ | ✓ |
+| Kitabın sahibi | ✗ | ✓ (moderasyon) |
+| Diğerleri | ✗ | ✗ |
+
+Yorum yazmak için kitabı görebiliyor olmak yeterlidir; sahibi olmak
+gerekmez. Yorum düzenleme ve silme adresleri de kitabı `visible_to` içinde
+arar, böylece görünürlük zinciri yorumlarda delinmez.
 
 ## Tasarım kararları
 
@@ -425,6 +449,60 @@ Bu listede erişilemeyen kayıtlar için yer tutucu **gösterilmez** — kendi
 favori sayfasındakinin aksine. Aradaki fark şu: kendi sayfanda o kayıtlar
 senin verindir ve eksilmeyi açıklamak gerekir; başkasının profilinde ise
 sana ait olmayan kayıtların sayısını duyurmak yalnızca bilgi sızdırır.
+
+### Yorumlar neden gerçekten silinmiyor (soft delete)?
+
+Silme isteği satırı kaldırmaz; yalnızca `is_deleted` alanını işaretler.
+Ekranda "Bu yorum silindi" yazar, metin ve yazar bilgisi gösterilmez ama
+kayıt veritabanında durur.
+
+**Konuşmanın akışı bozulmasın.** Bir yoruma cevap verilmişse ve ana yorum
+gerçekten silinirse, cevap kime verildiği belirsiz bir şekilde havada
+kalır. Yer tutucu bırakmak bağlamı korur. (Cevap özelliği bu projede yok
+ama model buna hazır olacak şekilde kuruldu.)
+
+**Moderasyon izlenebilir olsun.** Kitap sahibi başkasının yorumunu
+silebiliyor. Kayıt tamamen yok edilseydi "burada ne yazıyordu, haklı bir
+silme miydi?" sorusunun cevabı kalmazdı.
+
+**Geri alınabilir olsun.** Yanlışlıkla silinen bir yorum `is_deleted`
+alanı kapatılarak geri getirilebilir; `delete()` çağrılsaydı bu mümkün
+olmazdı.
+
+Silinmiş yorum tekrar silinemez ve düzenlenemez: `can_edit` ve
+`can_delete` metotları `is_deleted` işaretli kayıtlar için `False` döner,
+böylece butona iki kez basılması veya adresin elle çağrılması bir şeyi
+değiştirmez.
+
+### Kitap sahibi neden silebiliyor ama düzenleyemiyor?
+
+Moderasyon yetkisi "bu içeriği kaldır" demektir, "bu içeriği değiştir"
+demek değil. Kitap sahibi kendi kitabının altındaki uygunsuz bir yorumu
+kaldırabilmeli; ama başkasının cümlesini değiştirip onun adı altında
+bırakabilmesi, yorumun yazarına atfedilen sözü tahrif etmek olurdu.
+
+Bu yüzden iki ayrı metot var:
+
+```python
+can_edit(user)    → yalnızca yazarı
+can_delete(user)  → yazarı veya kitabın sahibi
+```
+
+### Yazar ve kitap neden formda değil?
+
+`CommentForm` yalnızca `text` alanını içerir. `author` ve `book`
+oturumdan ve adresten alınır.
+
+Formdaki her alan tarayıcıdan gelir ve kullanıcı tarayıcıyı kontrol eder:
+açılır listedeki değeri geliştirici araçlarıyla değiştirebilir, ya da
+formu hiç kullanmayıp isteği doğrudan gönderebilir. `author` formda
+olsaydı, bir kullanıcı başkasının adına yorum yazabilirdi. Gizli alan
+(`type="hidden"`) da çözüm değildir: gizli, "görünmez" demektir,
+"değiştirilemez" değil.
+
+Aynı kural `BookForm`'daki `owner` ve arkadaşlık isteğindeki `from_user`
+için de geçerlidir: **kullanıcının belirlememesi gereken alan forma
+konmaz, sunucu kendi belirler.**
 
 ## Ekran görüntüleri
 

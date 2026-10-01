@@ -119,5 +119,39 @@ class Favorite(models.Model):
         return f"{self.user.username} → {self.book.title}"
 
 
+class Comment(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    text = models.TextField("Yorum", max_length=1000)
+
+    # Yorum silindiğinde satır kaldırılmaz, yalnızca işaretlenir: cevap
+    # zinciri kopmasın, moderasyon kaydı kaybolmasın ve gerekirse geri
+    # alınabilsin diye. Ekranda "Bu yorum silindi" olarak görünür.
+    is_deleted = models.BooleanField("Silindi", default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Yorum"
+        verbose_name_plural = "Yorumlar"
+
+    def __str__(self):
+        if self.is_deleted:
+            return f"{self.author.username} (silinmiş yorum)"
+        return f"{self.author.username}: {self.text[:40]}"
+
+    def can_edit(self, user):
+        """Yorumu yalnızca yazarı düzenleyebilir."""
+        return not self.is_deleted and self.author_id == user.id
+
+    def can_delete(self, user):
+        """Yorumu yazarı silebilir; kitabın sahibi de moderasyon için silebilir."""
+        if self.is_deleted:
+            return False
+        return self.author_id == user.id or self.book.owner_id == user.id
+
+
 
 
