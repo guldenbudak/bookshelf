@@ -18,11 +18,11 @@
                 </p>
 
                 {% if user.account_approval.status == 'approved' %}
-                    <a href="{% url 'book-list' %}" class="btn btn-light px-4 py-2 fw-bold me-2">
-                        Kitaplarım
+                    <a href="{% url 'book-akis' %}" class="btn btn-light px-4 py-2 fw-bold me-2">
+                        Akışa Git
                     </a>
-                    <a href="{% url 'book-create' %}" class="btn btn-hayalet px-4 py-2">
-                        Kitap Ekle
+                    <a href="{% url 'book-list' %}" class="btn btn-hayalet px-4 py-2">
+                        Kitaplarım
                     </a>
                 {% elif user.is_authenticated %}
                     <a href="{% url 'pending' %}" class="btn btn-light px-4 py-2 fw-bold">

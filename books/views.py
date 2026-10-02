@@ -18,6 +18,7 @@ def sahibi_olmali(book, user):
 
 
 def home(request):
+    """Karşılama sayfası. Giriş yapmış olsun olmasın herkese aynı sayfa açılır."""
     return render(request, 'books/home.html')
 
 @login_required
@@ -73,6 +74,17 @@ def book_list(request):
     books = sirala(books, request.GET.get('sort'))
 
     return render(request, 'books/book_list.html', {'books': sayfala(request, books)})
+
+
+@login_required
+@approved_required
+def book_akis(request):
+    """Akış: kullanıcının görebildiği her kitap — kendi rafı, arkadaşlarınınki
+    ve kitaplığını herkese açanlarınki."""
+    books = Book.objects.visible_to(request.user).with_related().with_favorites(request.user)
+    books = sirala(books, request.GET.get('sort'))
+
+    return render(request, 'books/akis.html', {'books': sayfala(request, books)})
 
 
 @login_required

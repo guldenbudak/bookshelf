@@ -25,15 +25,16 @@
 
         <div class="collapse navbar-collapse" id="menu">
             <div class="navbar-nav">
-                <a class="nav-link" href="{% url 'home' %}">Ana Sayfa</a>
-
                 {% if user.account_approval.status == 'approved' %}
+                    <a class="nav-link" href="{% url 'book-akis' %}">Akış</a>
                     <a class="nav-link" href="{% url 'book-list' %}">Kitaplarım</a>
-                    <a class="nav-link" href="{% url 'book-feed' %}">Akış</a>
+                    <a class="nav-link" href="{% url 'book-feed' %}">Arkadaş Kitapları</a>
                     <a class="nav-link" href="{% url 'favorite-list' %}">Favorilerim</a>
                     <a class="nav-link" href="{% url 'book-create' %}">Kitap Ekle</a>
                     <a class="nav-link" href="{% url 'friends' %}">Arkadaşlar</a>
                     <a class="nav-link" href="{% url 'user-search' %}">Kişi Ara</a>
+                {% else %}
+                    <a class="nav-link" href="{% url 'home' %}">Ana Sayfa</a>
                 {% endif %}
             </div>
 
