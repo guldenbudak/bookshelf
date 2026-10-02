@@ -8,7 +8,7 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div>
             <h1 class="h3 fw-bold mb-1">Akış</h1>
-            <p class="soluk small mb-0">Arkadaşlarının raflarında {{ books|length }} kitap</p>
+            <p class="soluk small mb-0">Arkadaşlarının raflarında {{ books.paginator.count }} kitap</p>
         </div>
 
         <a href="{% url 'friends' %}" class="btn btn-hayalet px-4 d-inline-flex align-items-center gap-2">
@@ -53,6 +53,8 @@
             </div>
         {% endfor %}
     </div>
+
+    {% include 'books/_pagination.html' %}
 
 </div>
 {% endblock %}

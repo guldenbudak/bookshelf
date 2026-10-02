@@ -1,4 +1,5 @@
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.db.models import Count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
@@ -37,13 +38,31 @@ def book_create(request):
 
     return render(request, 'books/book_create.html', {'form': form})
 
+SAYFA_BASINA = 12
+
+
 def sirala(books, sort):
-    """Listeleri aynı şekilde sıralar; /books/ ve /feed/ ortak kullanıyor."""
+    """Listeleri aynı şekilde sıralar; /books/ ve /feed/ ortak kullanıyor.
+
+    Varsayılan sıra da açıkça veriliyor: annotate() eklenen sorgularda
+    Django modeldeki Meta.ordering'i kesin saymaz ve sayfalama tutarsız
+    olabilir — aynı kitap iki sayfada birden görünebilirdi.
+    """
     if sort == 'title':
-        return books.order_by('title')
+        return books.order_by('title', 'pk')
     if sort == 'page_count':
-        return books.order_by('page_count')
-    return books
+        return books.order_by('page_count', 'pk')
+    return books.order_by('-created_at', 'pk')
+
+
+def sayfala(request, books):
+    """Listeyi sayfalara böler.
+
+    get_page, geçersiz veya aralık dışı sayfa numaralarını hata vermeden
+    ele alır: harf gelirse ilk sayfayı, çok büyük bir sayı gelirse son
+    sayfayı döndürür.
+    """
+    return Paginator(books, SAYFA_BASINA).get_page(request.GET.get('page'))
 
 
 @login_required
@@ -53,7 +72,7 @@ def book_list(request):
     books = Book.objects.owned_by(request.user).with_related().with_favorites(request.user)
     books = sirala(books, request.GET.get('sort'))
 
-    return render(request, 'books/book_list.html', {'books': books})
+    return render(request, 'books/book_list.html', {'books': sayfala(request, books)})
 
 
 @login_required
@@ -63,7 +82,7 @@ def book_feed(request):
     books = Book.objects.from_friends_of(request.user).with_related().with_favorites(request.user)
     books = sirala(books, request.GET.get('sort'))
 
-    return render(request, 'books/book_feed.html', {'books': books})
+    return render(request, 'books/book_feed.html', {'books': sayfala(request, books)})
 
 
 @login_required
