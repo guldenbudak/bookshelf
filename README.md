@@ -77,7 +77,7 @@ aksi hâlde ilk yönetici kendi admin panelinden kilitlenirdi.
 - [x] **Aşama 4** — Kitap sahipliği ve görünürlük
 - [x] **Aşama 5** — Favoriler
 - [x] **Aşama 6** — Yorumlar
-- [ ] Aşama 7 — Kalite ve performans
+- [x] **Aşama 7** — Kalite ve performans
 
 ### Aşama 1'de yapılanlar
 
@@ -128,9 +128,14 @@ eklendi; ayrıntısı aşağıda.
 
 | Adres | İçerik |
 |---|---|
+| `/` | Karşılama sayfası; giriş yapılmış olsun olmasın herkese aynı |
+| `/akis/` | Kullanıcının görebildiği **her** kitap |
 | `/books/` | Kullanıcının kendi kitapları |
 | `/feed/` | Arkadaşlarının kitapları |
 | `/books/<pk>/` | Yalnızca görme yetkisi varsa; yoksa 404 |
+
+Üç liste de aynı `BookQuerySet` üzerinden kurulur, yalnızca süzgeçleri
+farklıdır: `visible_to()`, `owned_by()`, `from_friends_of()`.
 
 Görünürlük kuralı `BookQuerySet` içinde tanımlı, view'lara dağıtılmadı:
 
@@ -187,6 +192,26 @@ Yetkiler ikiye ayrılır:
 Yorum yazmak için kitabı görebiliyor olmak yeterlidir; sahibi olmak
 gerekmez. Yorum düzenleme ve silme adresleri de kitabı `visible_to` içinde
 arar, böylece görünürlük zinciri yorumlarda delinmez.
+
+### Aşama 7'de yapılanlar
+
+**Testler.** `python manage.py test` ile 18 test çalışır; hepsi geçiyor.
+
+| Dosya / sınıf | Test | Neyi koruyor |
+|---|---|---|
+| `accounts` · `OnayAkisiTests` | 3 | Onaysız ve reddedilmiş kullanıcı korumalı sayfaya giremez |
+| `accounts` · `ArkadaslikIstegiTests` | 3 | Kendine istek yok, isteği yalnızca alıcısı cevaplar, karşılıklı istek doğrudan arkadaşlık kurar |
+| `books` · `KitapGorunurluguTests` | 3 | Yabancı 404 alır; arkadaş ve `books_public` açıkken görünür |
+| `books` · `KitapSahipligiTests` | 3 | Sahibi olmayan silemez; sahip formdan değil oturumdan gelir |
+| `books` · `FavoriTests` | 3 | Aynı kitap iki kez favorilenemez; görülemeyen kitap favorilenemez |
+| `books` · `YorumTests` | 3 | Kitap sahibi siler ama düzenleyemez; silinen yorumun metni gizlenir |
+
+**Sayfalama.** Üç kitap listesi de sayfa başına 12 kayıt gösterir
+(`books/views.py` içindeki `SAYFA_BASINA`). Sayfa numarası `get_page()` ile
+okunur: harf veya aralık dışı bir değer gelirse hata vermek yerine ilk ya da
+son sayfaya düşer.
+
+**Performans.** Sorgu sayıları aşağıda, ayrı bölümde.
 
 ## Tasarım kararları
 
@@ -353,14 +378,6 @@ kontrolünü yazmayı unutmak mümkün değildir, çünkü kayıt zaten yalnızc
 yetkili kullanıcı için bulunur. Başkasının isteğine müdahale eden veya
 kendi gönderdiği isteği kabul etmeye çalışan kullanıcı 404 alır.
 
-### Tekrarlanan sorgular
-
-`Profile.get_friends()` arkadaş listesini `select_related('user')` ile
-getirir; arkadaşlar ve istek listelerinde ilişkili kullanıcı ve profil
-kayıtları da tek sorguda çekilir. Kullanıcı aramasında ilişki durumu her
-satır için ayrı ayrı sorgulanmaz, üç küme (arkadaşlar, gönderilen istekler,
-gelen istekler) baştan birer sorguyla alınıp şablonda karşılaştırılır.
-
 ### Yetkisiz erişimde neden 403 yerine 404?
 
 **403 bir bilgi sızdırır: kaydın var olduğu.** "Böyle bir şey var ama sen
@@ -504,10 +521,90 @@ Aynı kural `BookForm`'daki `owner` ve arkadaşlık isteğindeki `from_user`
 için de geçerlidir: **kullanıcının belirlememesi gereken alan forma
 konmaz, sunucu kendi belirler.**
 
-## Ekran görüntüleri
+### Testler neden bu altı konuyu seçti?
 
-_Aşama 7'de eklenecek: kayıt, onay bekliyor, profil, arkadaşlar, feed._
+Test her satırı denemeye çalışmaz; **sessizce bozulabilecek** kuralları
+korur. Bir şablonda yazım hatası olursa sayfa açılmaz, hemen görülür. Ama
+`sahibi_olmali()` çağrısı yanlışlıkla silinirse hiçbir şey patlamaz —
+uygulama çalışmaya devam eder, yalnızca artık herkes herkesin kitabını
+silebiliyordur. Testlerin işi bu ikinci türü yakalamaktır.
+
+Seçilen altı konu da bu tarife uyuyor: onay kontrolü, arkadaşlık yetkisi,
+görünürlük, sahiplik, tekillik kısıtı ve yorum yetkileri. Hepsi gözle
+görünmeden bozulabilir.
+
+Doğrulaması: `sahibi_olmali(book, request.user)` satırı `book_delete`
+içinden geçici olarak kaldırıldığında `test_sahibi_olmayan_kullanici_kitabi_silemez`
+`AssertionError: 302 != 403` ile düştü. Satır geri konduğunda tekrar geçti.
+
+### Sayfalamada sıralama neden açıkça yazıldı?
+
+`Book.Meta.ordering` zaten `-created_at` olmasına rağmen `sirala()` sıralamayı
+her seferinde `order_by()` ile tekrar veriyor. Sebebi `annotate()`:
+
+Favori sayısı eklenince Django modeldeki varsayılan sıralamayı kesin
+saymaz ve `UnorderedObjectListWarning` verir. Sırası garanti olmayan bir
+sorgu sayfalara bölünürse veritabanı her `LIMIT/OFFSET` isteğinde farklı
+sıra döndürebilir — **aynı kitap hem 1. hem 2. sayfada çıkabilir**, bir
+başkası hiç görünmeyebilir.
+
+İkinci alan olarak `pk` eklenmesi de bunun için: `created_at` değerleri eşit
+olan iki kitabın arasını açar, sıralamayı tam belirli hâle getirir.
 
 ## Performans
 
-_Aşama 7'de eklenecek: debug toolbar öncesi/sonrası sorgu sayısı._
+Ölçüm `CaptureQueriesContext` ile yapıldı; görsel yerine sayı veriyor, bu
+yüzden tekrar üretilebilir.
+
+**Asıl karşılaştırma.** Akıştaki 9 kitap için, şablonun gerçekten
+kullandığı her alana dokunarak (kategori adı, sahip adı, favori sayısı,
+"favorimde mi"):
+
+| Sorgu seti | Sorgu sayısı |
+|---|---|
+| `Book.objects.visible_to(user)` — düz hâli | **29** |
+| `.with_related().with_favorites(user)` eklenmiş hâli | **1** |
+
+29 sayısının yapısı: 1 kitap listesi + her kitap için 3 ek sorgu
+(kategori, sahip, favori sayısı) × 9 kitap + 1. Buna **N+1 problemi**
+denir: liste uzadıkça sorgu sayısı da uzar. 100 kitapta ~300 sorgu olurdu.
+
+Tek sorguya inmesinin sebebi:
+
+- `select_related('category', 'owner')` → ForeignKey'leri aynı sorguya
+  `JOIN` ile katar
+- `annotate(Count('favorited_by'))` → favori sayısını veritabanına saydırır
+- `annotate(Exists(...))` → "bu kullanıcı favorilemiş mi" sorusunu alt
+  sorgu olarak ekler
+
+**Sayfa bazında toplam** (giriş kontrolü, oturum ve mesajlar dahil):
+
+| Sayfa | Sorgu |
+|---|---|
+| `/akis/` | 7 |
+| `/books/` | 6 |
+| `/feed/` | 6 |
+| `/books/<pk>/` | 7 |
+| `/favorites/` | 8 |
+
+Önemli olan sayıların küçüklüğü değil, **kayıt sayısından bağımsız
+olmaları**: sayfadaki kitap 1 de olsa 12 de olsa bu sayılar değişmez.
+
+Listeler dışında iki yer daha aynı sebeple elden geçirildi: yorumlar
+`select_related('author__profile')` ile, arkadaş listesi
+`Profile.get_friends()` içinde `select_related('user')` ile çekiliyor.
+Kullanıcı aramasında ise ilişki durumu satır satır sorgulanmaz; arkadaşlar,
+gönderilen ve gelen istekler baştan üç sorguyla birer kümeye alınıp şablonda
+karşılaştırılır.
+
+Ölçümü tekrarlamak için:
+
+```python
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
+
+with CaptureQueriesContext(connection) as q:
+    for b in Book.objects.visible_to(user).with_related().with_favorites(user):
+        b.category.name, b.owner.username, b.favori_sayisi, b.favorimde
+print(len(q))
+```
