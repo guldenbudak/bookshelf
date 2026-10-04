@@ -38,20 +38,39 @@ Python 3.14 ve Django 6.0 ile geliştirildi.
 ```
 User (django.contrib.auth)
  │
- ├── 1:1 Profile
- │        ├── 1:1 ProfileSettings   tema, gizlilik, bildirim tercihleri
- │        ├── 1:N SocialLink        platform + adres (platform başına bir tane)
- │        └── 1:N Address           ev / iş adresleri, biri varsayılan
+ ├── 1:1  Profile                     avatar, doğum tarihi, biyografi
+ │         │
+ │         ├── 1:1  ProfileSettings   tema, gizlilik, bildirim tercihleri
+ │         ├── 1:N  SocialLink        platform + adres (platform başına bir tane)
+ │         ├── 1:N  Address           ev / iş adresleri, biri varsayılan
+ │         └── M:N  Profile  ←─ friends, simetrik (kendine dönük ilişki)
  │
- ├── 1:1 AccountApproval      onay durumu + onaylayan admin + tarih
- ├── 1:N Book (owner)         kitabın sahibi, zorunlu
- ├── 1:N Favorite            kullanıcı + kitap (çift başına tek kayıt)
- └── 1:N Comment             yorum; silinince satır kalır, işaretlenir
+ ├── 1:1  AccountApproval             pending / approved / rejected
+ │          └── N:1 User (reviewed_by)   işlemi yapan admin, SET_NULL
+ │
+ ├── 1:N  FriendRequest (from_user)   gönderilen istekler
+ ├── 1:N  FriendRequest (to_user)     gelen istekler
+ ├── 1:N  Book  (owner)               kitabın sahibi, zorunlu
+ ├── 1:N  Favorite (user)
+ └── 1:N  Comment  (author)
 
-Book ──── N:1 Category
+Book
+ ├── N:1  Category
+ ├── 1:N  Favorite (book)    ─┐  user + book çifti benzersiz
+ └── 1:N  Comment  (book)     │  is_deleted ile işaretlenir, satır silinmez
+                              └─ UniqueConstraint
 ```
 
-Tüm tablolar eklendi.
+Üç tablo iki tarafa birden bağlanır, ilişkiyi onlar kurar:
+
+| Tablo | Bağladığı | Kısıt |
+|---|---|---|
+| `Favorite` | `User` + `Book` | `user` + `book` benzersiz |
+| `Comment` | `User` + `Book` | — |
+| `FriendRequest` | `User` + `User` | `from_user` + `to_user` benzersiz; `from_user != to_user` |
+
+`Profile.friends` ayrı bir tablo değil, Django'nun simetrik `ManyToManyField('self')`
+alanıdır: tek satır yazılır, iki yön birden kurulur.
 
 ### AccountApproval
 
