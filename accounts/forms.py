@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
@@ -52,6 +54,39 @@ class ProfileForm(forms.ModelForm):
             )
 
         return avatar
+
+    def clean_phone(self):
+        """Telefonu denetler ve tek bir biçimde saklar.
+
+        Kullanıcı numarayı boşluklu, tireli ya da +90'lı yazabilir. Hepsini
+        aynı hâle getiriyoruz ki aynı numara veritabanında iki farklı
+        görünümde durmasın.
+        """
+        phone = (self.cleaned_data.get('phone') or '').strip()
+
+        # Alan zorunlu değil; boş bırakılabilir.
+        if not phone:
+            return ''
+
+        # Ayırıcıları at, geriye yalnızca rakamlar (ve varsa +) kalsın.
+        sade = re.sub(r'[\s()\-./]', '', phone)
+
+        # Ülke kodunun üç yazılışını da 0'lı biçime çeviriyoruz.
+        if sade.startswith('+90'):
+            sade = '0' + sade[3:]
+        elif sade.startswith('0090'):
+            sade = '0' + sade[4:]
+        elif len(sade) == 12 and sade.startswith('90'):
+            sade = '0' + sade[2:]
+        elif len(sade) == 10 and not sade.startswith('0'):
+            sade = '0' + sade
+
+        if not re.fullmatch(r'0\d{10}', sade):
+            raise forms.ValidationError(
+                "Telefon 11 haneli olmalı ve 0 ile başlamalı. Örnek: 0532 123 45 67"
+            )
+
+        return sade
 
 
 class ProfileSettingsForm(forms.ModelForm):

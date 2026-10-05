@@ -76,3 +76,50 @@ class ArkadaslikIstegiTests(TestCase):
         self.client.post(reverse('friend-request-send', args=['bora']))
 
         self.assertTrue(self.ayse.profile.is_friend_with(self.bora.profile))
+
+    def test_gelen_istek_arkadaslar_sayfasinda_listelenir(self):
+        FriendRequest.objects.create(from_user=self.bora, to_user=self.ayse)
+
+        cevap = self.client.get(reverse('friends'))
+
+        self.assertEqual([i.from_user for i in cevap.context['incoming']], [self.bora])
+        self.assertIn('bora', cevap.content.decode())
+
+    def test_kabul_edilen_istek_gelenler_listesinden_cikar(self):
+        istek = FriendRequest.objects.create(from_user=self.bora, to_user=self.ayse)
+
+        self.client.post(reverse('friend-request-accept', args=[istek.pk]))
+        cevap = self.client.get(reverse('friends'))
+
+        self.assertEqual(list(cevap.context['incoming']), [])
+
+
+class TelefonDogrulamaTests(TestCase):
+    """Telefon alanı serbest metin kabul etmemeli."""
+
+    def setUp(self):
+        self.kullanici = kullanici_olustur('telefoncu')
+        self.client.force_login(self.kullanici)
+
+    def profili_kaydet(self, phone):
+        return self.client.post(reverse('profile-edit'), {
+            'display_name': 'Ad', 'bio': '', 'birth_date': '', 'phone': phone,
+            'theme': 'dark',
+            # inline formset'in beklediği yönetim alanları
+            'social_links-TOTAL_FORMS': '0', 'social_links-INITIAL_FORMS': '0',
+            'social_links-MIN_NUM_FORMS': '0', 'social_links-MAX_NUM_FORMS': '5',
+        })
+
+    def test_gecersiz_numara_reddedilir(self):
+        self.profili_kaydet('asdf')
+
+        self.kullanici.profile.refresh_from_db()
+        self.assertEqual(self.kullanici.profile.phone, '')
+
+    def test_farkli_yazimlar_ayni_bicimde_saklanir(self):
+        for yazim in ('0532 123 45 67', '+90 532 123 45 67', '(0532) 123-45-67'):
+            with self.subTest(yazim=yazim):
+                self.profili_kaydet(yazim)
+
+                self.kullanici.profile.refresh_from_db()
+                self.assertEqual(self.kullanici.profile.phone, '05321234567')
