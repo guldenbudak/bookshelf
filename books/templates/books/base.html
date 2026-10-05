@@ -47,12 +47,9 @@
                         </span>
                     </a>
 
-                    <form method="POST" action="{% url 'logout' %}" class="m-0">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-hayalet btn-sm px-3">
-                            Çıkış
-                        </button>
-                    </form>
+                    <a href="{% url 'logout-confirm' %}" class="btn btn-hayalet btn-sm px-3">
+                        Çıkış
+                    </a>
                 {% else %}
                     <a class="nav-link" href="{% url 'login' %}">Giriş Yap</a>
                     <a class="btn btn-gradyan btn-sm px-3" href="{% url 'register' %}">

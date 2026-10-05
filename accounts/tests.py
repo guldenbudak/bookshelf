@@ -94,6 +94,67 @@ class ArkadaslikIstegiTests(TestCase):
         self.assertEqual(list(cevap.context['incoming']), [])
 
 
+class HesapSilmeTests(TestCase):
+    """Hesap silme geri alınamaz; parola doğrulaması şart."""
+
+    def setUp(self):
+        self.kullanici = kullanici_olustur('silinecek')
+        self.client.force_login(self.kullanici)
+
+    def test_onay_sayfasi_hicbir_sey_silmez(self):
+        cevap = self.client.get(reverse('account-delete'))
+
+        self.assertEqual(cevap.status_code, 200)
+        self.assertTrue(User.objects.filter(username='silinecek').exists())
+
+    def test_yanlis_parola_ile_silinmez(self):
+        self.client.post(reverse('account-delete'), {'password': 'yanlis'})
+
+        self.assertTrue(User.objects.filter(username='silinecek').exists())
+
+    def test_dogru_parola_ile_silinir(self):
+        self.client.post(reverse('account-delete'), {'password': PAROLA})
+
+        self.assertFalse(User.objects.filter(username='silinecek').exists())
+
+    def test_silinen_hesabin_oturumu_kapanir(self):
+        self.client.post(reverse('account-delete'), {'password': PAROLA})
+
+        cevap = self.client.get(reverse('book-list'))
+
+        self.assertEqual(cevap.status_code, 302)
+        self.assertIn(reverse('login'), cevap['Location'])
+
+    def test_giris_yapmamis_ziyaretci_silme_sayfasini_goremez(self):
+        self.client.logout()
+
+        cevap = self.client.get(reverse('account-delete'))
+
+        self.assertEqual(cevap.status_code, 302)
+        self.assertIn(reverse('login'), cevap['Location'])
+
+
+class CikisTests(TestCase):
+    def setUp(self):
+        self.kullanici = kullanici_olustur('cikan')
+        self.client.force_login(self.kullanici)
+
+    def test_onay_sayfasi_oturumu_kapatmaz(self):
+        self.client.get(reverse('logout-confirm'))
+
+        cevap = self.client.get(reverse('book-list'))
+
+        self.assertEqual(cevap.status_code, 200)
+
+    def test_post_ile_cikis_yapilir(self):
+        self.client.post(reverse('logout'))
+
+        cevap = self.client.get(reverse('book-list'))
+
+        self.assertEqual(cevap.status_code, 302)
+        self.assertIn(reverse('login'), cevap['Location'])
+
+
 class TelefonDogrulamaTests(TestCase):
     """Telefon alanı serbest metin kabul etmemeli."""
 

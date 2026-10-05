@@ -1,0 +1,43 @@
+{% extends 'books/base.html' %}
+
+{% block title %}Çıkış — Kitaplık{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+
+            <div class="kart">
+                <div class="kart-serit"></div>
+                <div class="card-body p-4 text-center">
+
+                    <span class="ikon-kutu ikon-kutu-lg mb-3">
+                        {% include 'books/icons/users.html' %}
+                    </span>
+
+                    <h1 class="h5 fw-bold mb-2">Çıkış yapmak istiyor musun?</h1>
+                    <p class="soluk small mb-4">
+                        <strong>{{ user.username }}</strong> hesabından çıkacaksın.
+                        Kitapların ve ayarların olduğu gibi kalır.
+                    </p>
+
+                    <div class="d-flex gap-2 justify-content-center">
+                        <form method="POST" action="{% url 'logout' %}" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-gradyan px-4">
+                                Evet, çıkış yap
+                            </button>
+                        </form>
+
+                        <a href="{% url 'home' %}" class="btn btn-hayalet px-4">
+                            Vazgeç
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

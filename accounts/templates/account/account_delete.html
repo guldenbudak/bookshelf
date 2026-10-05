@@ -1,0 +1,60 @@
+{% extends 'books/base.html' %}
+
+{% block title %}Hesabı sil — Kitaplık{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+
+            <div class="kart">
+                <div class="kart-serit"></div>
+                <div class="card-body p-4">
+
+                    <h1 class="h5 fw-bold mb-2 text-danger">Hesabını sil</h1>
+                    <p class="soluk small mb-4">
+                        Bu işlem geri alınamaz. Hesabınla birlikte aşağıdakiler de
+                        kalıcı olarak silinir.
+                    </p>
+
+                    <ul class="list-unstyled mb-4">
+                        <li class="d-flex justify-content-between py-2 border-bottom border-secondary-subtle">
+                            <span class="soluk small">Kitapların</span>
+                            <strong>{{ kitap_sayisi }}</strong>
+                        </li>
+                        <li class="d-flex justify-content-between py-2 border-bottom border-secondary-subtle">
+                            <span class="soluk small">Yorumların</span>
+                            <strong>{{ yorum_sayisi }}</strong>
+                        </li>
+                        <li class="d-flex justify-content-between py-2">
+                            <span class="soluk small">Arkadaşlıkların</span>
+                            <strong>{{ arkadas_sayisi }}</strong>
+                        </li>
+                    </ul>
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <label for="password" class="form-label fw-semibold small">
+                            Onaylamak için parolanı yaz
+                        </label>
+                        <input type="password" name="password" id="password"
+                               class="form-control mb-4" autocomplete="current-password" required>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger px-4">
+                                Hesabımı kalıcı olarak sil
+                            </button>
+                            <a href="{% url 'profile-edit' %}" class="btn btn-hayalet px-4">
+                                Vazgeç
+                            </a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
