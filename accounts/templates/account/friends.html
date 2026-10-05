@@ -21,14 +21,20 @@
                 </a>
             </div>
 
-            <div class="sekmeler mb-4">
-                <a href="#arkadaslar" class="aktif" data-bs-toggle="tab" data-bs-target="#arkadaslar">
+            {# Bootstrap'in sekme eklentisi, düğmelerin .nav sınıflı bir
+               kapsayıcının içinde olmasını şart koşuyor; yoksa tıklama
+               hiçbir şey yapmıyor. #}
+            <div class="sekmeler nav mb-4" role="tablist">
+                <a href="#arkadaslar" class="active" data-bs-toggle="tab"
+                   data-bs-target="#arkadaslar" role="tab">
                     Arkadaşlarım ({{ friends|length }})
                 </a>
-                <a href="#gelen" data-bs-toggle="tab" data-bs-target="#gelen">
+                <a href="#gelen" data-bs-toggle="tab"
+                   data-bs-target="#gelen" role="tab">
                     Gelen ({{ incoming|length }})
                 </a>
-                <a href="#giden" data-bs-toggle="tab" data-bs-target="#giden">
+                <a href="#giden" data-bs-toggle="tab"
+                   data-bs-target="#giden" role="tab">
                     Gönderilen ({{ outgoing|length }})
                 </a>
             </div>
