@@ -1,0 +1,86 @@
+{% extends 'books/base.html' %}
+{% load static %}
+
+{% block title %}Kişi Ara — Kitaplık{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <h1 class="h3 fw-bold mb-1">Kişi Ara</h1>
+            <p class="soluk small mb-4">Kullanıcı adına göre ara, arkadaşlık isteği gönder.</p>
+
+            <form method="GET" class="mb-4">
+                <div class="input-group">
+                    <input type="text" name="q" value="{{ sorgu }}" class="form-control"
+                           placeholder="Kullanıcı adı yaz..." autofocus>
+                    <button type="submit" class="btn btn-gradyan px-4">Ara</button>
+                </div>
+            </form>
+
+            {% if sorgu %}
+                <p class="soluk small mb-3">
+                    "{{ sorgu }}" için {{ sonuclar|length }} sonuç
+                </p>
+            {% endif %}
+
+            {% for kisi in sonuclar %}
+                <div class="kart kart-hover mb-3">
+                    <div class="card-body p-3 d-flex flex-wrap align-items-center gap-3">
+                        {% if kisi.profile.avatar %}
+                            <img src="{{ kisi.profile.avatar.url }}" class="avatar" style="width:52px;height:52px;">
+                        {% else %}
+                            <img src="{% static 'accounts/default-avatar.svg' %}" class="avatar" style="width:52px;height:52px;">
+                        {% endif %}
+
+                        <div class="flex-grow-1">
+                            <a href="{% url 'profile-detail' kisi.username %}"
+                               class="fw-bold text-decoration-none" style="color: var(--metin);">
+                                {{ kisi.profile.name }}
+                            </a>
+                            <p class="soluk small mb-0">@{{ kisi.username }}</p>
+                        </div>
+
+                        {% if kisi.id in arkadas_idleri %}
+                            <span class="rozet rozet-yesil">✓ Arkadaşsınız</span>
+
+                        {% elif kisi.id in istek_gelenler %}
+                            <a href="{% url 'profile-detail' kisi.username %}" class="btn btn-gradyan btn-sm px-3">
+                                Sana istek gönderdi
+                            </a>
+
+                        {% elif kisi.id in istek_gonderilenler %}
+                            <span class="rozet rozet-sari">İstek gönderildi</span>
+
+                        {% else %}
+                            <form method="POST" action="{% url 'friend-request-send' kisi.username %}" class="m-0">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-gradyan btn-sm px-3 d-inline-flex align-items-center gap-2">
+                                    {% include 'books/icons/user-plus.html' %}
+                                    Arkadaş ekle
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="kart">
+                    <div class="bos-durum">
+                        <span class="ikon-kutu ikon-kutu-lg mb-3">
+                            {% include 'books/icons/search.html' %}
+                        </span>
+                        {% if sorgu %}
+                            <p class="mb-0">"{{ sorgu }}" ile eşleşen kullanıcı bulunamadı.</p>
+                        {% else %}
+                            <p class="mb-0">Aramak için yukarıya bir kullanıcı adı yaz.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

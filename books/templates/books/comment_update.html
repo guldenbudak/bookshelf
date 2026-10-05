@@ -1,0 +1,51 @@
+{% extends 'books/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Yorumu Düzenle — Kitaplık{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+
+            <div class="kart">
+                <div class="kart-serit"></div>
+                <div class="card-body p-4 p-md-5">
+
+                    <h1 class="h4 fw-bold mb-1">Yorumu Düzenle</h1>
+                    <p class="soluk small mb-4">
+                        <strong>{{ comment.book.title }}</strong> kitabına yazdığın yorum.
+                    </p>
+
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+
+                        <label for="{{ form.text.id_for_label }}" class="form-label fw-semibold small">
+                            {{ form.text.label }}
+                        </label>
+
+                        {% if form.text.errors %}
+                            {% render_field form.text class="form-control is-invalid" %}
+                        {% else %}
+                            {% render_field form.text class="form-control" %}
+                        {% endif %}
+
+                        {% for error in form.text.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-gradyan px-4">Kaydet</button>
+                            <a href="{% url 'book-detail' comment.book_id %}" class="btn btn-hayalet px-4">
+                                Vazgeç
+                            </a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

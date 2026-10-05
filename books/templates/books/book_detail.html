@@ -1,44 +1,180 @@
 {% extends 'books/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ book.title }} — Kitaplık{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
 
-    <div class="card">
-
-        <div class="card-body">
-            <h2 class="card-title">{{ book.title }}</h2>
-            <p class="card-text">Yazar: {{ book.author }}</p>
-            <p class="card-text">Kategori: {{ book.category }}</p>
-            <p class="card-text">Sayfa Sayısı: {{ book.page_count }}</p>
-
-            {% if book.cover %}
-                <img src="{{ book.cover.url }}" width="100">
-            {% endif %}
-
-            {% if book.is_read %}
-                <p class="card-text">Okundu: Evet</p>
-            {% else %}
-                <p class="card-text">Okundu: Hayır</p>
-            {% endif %}
-
-            {% if book.rating %}
-                <p class="card-text">Puan: {{ book.rating }}</p>
-            {% else %}
-                <p class="card-text">Puan: Henüz puan verilmemiş.</p>
-            {% endif %}
-
-            <br>
-
-            <a href="{% url 'book-list' %}" class="btn btn-secondary">
-                Kitap Listesine Dön
+            <a href="{% url 'book-list' %}" class="btn btn-hayalet btn-sm mb-3">
+                ← Kitaplara dön
             </a>
 
-            <a href="{% url 'book-update' book.pk %}" class="btn btn-warning">
-                Güncelle
-            </a>
+            <div class="kart">
+                <div class="kart-serit"></div>
 
-            <a href="{% url 'book-delete' book.pk %}" class="btn btn-danger">
-                Sil
-            </a>
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        {% if book.cover %}
+                            <img src="{{ book.cover.url }}" alt="{{ book.title }}"
+                                 class="w-100 h-100" style="object-fit: cover; min-height: 260px;">
+                        {% else %}
+                            <div class="kapak-bos h-100" style="min-height: 260px;">
+                                {% include 'books/icons/book.html' %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="card-body p-4 p-md-5">
+
+                            <div class="d-flex flex-wrap gap-1 mb-3">
+                                <span class="rozet rozet-mor">{{ book.category }}</span>
+                                {% if book.is_read %}
+                                    <span class="rozet rozet-yesil">Okundu</span>
+                                {% else %}
+                                    <span class="rozet rozet-gri">Okunmadı</span>
+                                {% endif %}
+                                {% if book.rating %}
+                                    <span class="rozet rozet-sari">
+                                        {% include 'books/icons/star.html' %}
+                                        {{ book.rating }}/5
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <h1 class="h3 fw-bold mb-1">{{ book.title }}</h1>
+                            <p class="soluk mb-4">{{ book.author }}</p>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <p class="soluk small mb-0">Sayfa sayısı</p>
+                                    <p class="fw-bold mb-0">{{ book.page_count }}</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="soluk small mb-0">Puan</p>
+                                    <p class="fw-bold mb-0">
+                                        {% if book.rating %}{{ book.rating }}/5{% else %}—{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <hr class="ayirac my-4">
+
+                            {% if book.owner_id == user.id %}
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="{% url 'book-update' book.pk %}" class="btn btn-gradyan px-4">
+                                        Güncelle
+                                    </a>
+                                    <a href="{% url 'book-delete' book.pk %}" class="btn btn-hayalet px-4 text-danger">
+                                        Sil
+                                    </a>
+                                </div>
+                            {% else %}
+                                <p class="soluk small mb-0">
+                                    Bu kitap <strong>{{ book.owner.username }}</strong> kullanıcısına ait.
+                                </p>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="kart mt-4">
+                <div class="card-body p-4 p-md-5">
+
+                    <h2 class="h6 fw-bold mb-4 d-flex align-items-center gap-2">
+                        {% include 'books/icons/inbox.html' %}
+                        Yorumlar
+                        <span class="rozet rozet-gri ms-1">{{ comments|length }}</span>
+                    </h2>
+
+                    <form method="POST" action="{% url 'comment-create' book.pk %}" class="mb-4" novalidate>
+                        {% csrf_token %}
+
+                        {% render_field comment_form.text class="form-control" %}
+
+                        {% for error in comment_form.text.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+
+                        <button type="submit" class="btn btn-gradyan btn-sm px-4 mt-2">
+                            Yorum Yap
+                        </button>
+                    </form>
+
+                    <hr class="ayirac mb-4">
+
+                    {% for comment in comments %}
+                        <div class="d-flex gap-3 mb-4">
+                            {% if comment.is_deleted %}
+                                <span class="kapak-bos rounded-circle" style="width:40px;height:40px;flex-shrink:0;">
+                                    {% include 'books/icons/trash.html' %}
+                                </span>
+                                <div class="flex-grow-1">
+                                    <p class="soluk fst-italic small mb-0">Bu yorum silindi.</p>
+                                </div>
+                            {% else %}
+                                {% if comment.author.profile.avatar %}
+                                    <img src="{{ comment.author.profile.avatar.url }}"
+                                         class="avatar" style="width:40px;height:40px;flex-shrink:0;">
+                                {% else %}
+                                    <img src="{% static 'accounts/default-avatar.svg' %}"
+                                         class="avatar" style="width:40px;height:40px;flex-shrink:0;">
+                                {% endif %}
+
+                                <div class="flex-grow-1">
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                        <a href="{% url 'profile-detail' comment.author.username %}"
+                                           class="fw-bold small text-decoration-none" style="color: var(--metin);">
+                                            {{ comment.author.profile.name }}
+                                        </a>
+                                        <span class="soluk" style="font-size: .78rem;">
+                                            {{ comment.created_at|date:"d M Y, H:i" }}
+                                            {% if comment.updated_at|date:"U" > comment.created_at|date:"U" %}
+                                                · düzenlendi
+                                            {% endif %}
+                                        </span>
+                                    </div>
+
+                                    <p class="mb-2 small">{{ comment.text|linebreaksbr }}</p>
+
+                                    <div class="d-flex gap-2">
+                                        {% if comment.author_id == user.id %}
+                                            <a href="{% url 'comment-update' comment.pk %}"
+                                               class="btn btn-hayalet btn-sm px-3 py-1" style="font-size: .78rem;">
+                                                Düzenle
+                                            </a>
+                                        {% endif %}
+
+                                        {% if comment.author_id == user.id or book.owner_id == user.id %}
+                                            <form method="POST" action="{% url 'comment-delete' comment.pk %}" class="m-0">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                <button type="submit"
+                                                        class="btn btn-hayalet btn-sm px-3 py-1 text-danger"
+                                                        style="font-size: .78rem;">
+                                                    Sil
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="bos-durum py-3">
+                            <p class="mb-0 small">İlk yorumu sen yaz.</p>
+                        </div>
+                    {% endfor %}
+
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

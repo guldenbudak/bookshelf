@@ -1,0 +1,162 @@
+{% extends 'books/base.html' %}
+{% load static %}
+
+{% block title %}Arkadaşlar — Kitaplık{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">Arkadaşlar</h1>
+                    <p class="soluk small mb-0">
+                        {{ friends|length }} arkadaş · {{ incoming|length }} gelen istek
+                    </p>
+                </div>
+                <a href="{% url 'user-search' %}" class="btn btn-gradyan px-4 d-inline-flex align-items-center gap-2">
+                    {% include 'books/icons/search.html' %}
+                    Kişi Ara
+                </a>
+            </div>
+
+            <div class="sekmeler mb-4">
+                <a href="#arkadaslar" class="aktif" data-bs-toggle="tab" data-bs-target="#arkadaslar">
+                    Arkadaşlarım ({{ friends|length }})
+                </a>
+                <a href="#gelen" data-bs-toggle="tab" data-bs-target="#gelen">
+                    Gelen ({{ incoming|length }})
+                </a>
+                <a href="#giden" data-bs-toggle="tab" data-bs-target="#giden">
+                    Gönderilen ({{ outgoing|length }})
+                </a>
+            </div>
+
+            <div class="tab-content">
+
+                <div class="tab-pane fade show active" id="arkadaslar">
+                    {% for arkadas in friends %}
+                        <div class="kart kart-hover mb-3">
+                            <div class="card-body p-3 d-flex align-items-center gap-3">
+                                {% if arkadas.avatar %}
+                                    <img src="{{ arkadas.avatar.url }}" class="avatar" style="width:52px;height:52px;">
+                                {% else %}
+                                    <img src="{% static 'accounts/default-avatar.svg' %}" class="avatar" style="width:52px;height:52px;">
+                                {% endif %}
+
+                                <div class="flex-grow-1">
+                                    <a href="{% url 'profile-detail' arkadas.user.username %}"
+                                       class="fw-bold text-decoration-none" style="color: var(--metin);">
+                                        {{ arkadas.name }}
+                                    </a>
+                                    <p class="soluk small mb-0">@{{ arkadas.user.username }}</p>
+                                </div>
+
+                                <form method="POST" action="{% url 'friend-remove' arkadas.user.username %}" class="m-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="btn btn-hayalet btn-sm px-3 text-danger">
+                                        Çıkar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="kart">
+                            <div class="bos-durum">
+                                <span class="ikon-kutu ikon-kutu-lg mb-3">
+                                    {% include 'books/icons/users.html' %}
+                                </span>
+                                <p class="mb-3">Henüz arkadaşın yok.</p>
+                                <a href="{% url 'user-search' %}" class="btn btn-gradyan px-4">
+                                    Kişi ara
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="tab-pane fade" id="gelen">
+                    {% for istek in incoming %}
+                        <div class="kart mb-3">
+                            <div class="card-body p-3 d-flex flex-wrap align-items-center gap-3">
+                                {% if istek.from_user.profile.avatar %}
+                                    <img src="{{ istek.from_user.profile.avatar.url }}" class="avatar" style="width:52px;height:52px;">
+                                {% else %}
+                                    <img src="{% static 'accounts/default-avatar.svg' %}" class="avatar" style="width:52px;height:52px;">
+                                {% endif %}
+
+                                <div class="flex-grow-1">
+                                    <a href="{% url 'profile-detail' istek.from_user.username %}"
+                                       class="fw-bold text-decoration-none" style="color: var(--metin);">
+                                        {{ istek.from_user.profile.name }}
+                                    </a>
+                                    <p class="soluk small mb-0">
+                                        @{{ istek.from_user.username }} · {{ istek.created_at|date:"d M" }}
+                                    </p>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <form method="POST" action="{% url 'friend-request-accept' istek.pk %}" class="m-0">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-gradyan btn-sm px-3">Kabul et</button>
+                                    </form>
+                                    <form method="POST" action="{% url 'friend-request-reject' istek.pk %}" class="m-0">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-hayalet btn-sm px-3">Reddet</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="kart">
+                            <div class="bos-durum">
+                                <span class="ikon-kutu ikon-kutu-lg mb-3">
+                                    {% include 'books/icons/inbox.html' %}
+                                </span>
+                                <p class="mb-0">Bekleyen istek yok.</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="tab-pane fade" id="giden">
+                    {% for istek in outgoing %}
+                        <div class="kart mb-3">
+                            <div class="card-body p-3 d-flex align-items-center gap-3">
+                                {% if istek.to_user.profile.avatar %}
+                                    <img src="{{ istek.to_user.profile.avatar.url }}" class="avatar" style="width:52px;height:52px;">
+                                {% else %}
+                                    <img src="{% static 'accounts/default-avatar.svg' %}" class="avatar" style="width:52px;height:52px;">
+                                {% endif %}
+
+                                <div class="flex-grow-1">
+                                    <a href="{% url 'profile-detail' istek.to_user.username %}"
+                                       class="fw-bold text-decoration-none" style="color: var(--metin);">
+                                        {{ istek.to_user.profile.name }}
+                                    </a>
+                                    <p class="soluk small mb-0">@{{ istek.to_user.username }}</p>
+                                </div>
+
+                                <span class="rozet rozet-sari">Cevap bekleniyor</span>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="kart">
+                            <div class="bos-durum">
+                                <span class="ikon-kutu ikon-kutu-lg mb-3">
+                                    {% include 'books/icons/send.html' %}
+                                </span>
+                                <p class="mb-0">Gönderilmiş isteğin yok.</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

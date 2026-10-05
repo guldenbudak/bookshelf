@@ -1,0 +1,31 @@
+{% comment %}
+Profil sayfalarındaki küçük kitap kartı. Kitaplık ve favori listeleri
+aynı parçayı kullanıyor.
+{% endcomment %}
+
+<div class="col-sm-6">
+    <a href="{% url 'book-detail' book.pk %}"
+       class="kart kart-hover d-flex align-items-center gap-3 p-3 text-decoration-none h-100">
+        {% if book.cover %}
+            <img src="{{ book.cover.url }}" alt="{{ book.title }}"
+                 class="rounded-3" style="width:46px;height:60px;object-fit:cover;flex-shrink:0;">
+        {% else %}
+            <span class="kapak-bos rounded-3" style="width:46px;height:60px;flex-shrink:0;">
+                {% include 'books/icons/book.html' %}
+            </span>
+        {% endif %}
+
+        <span>
+            <span class="d-block fw-bold small" style="color: var(--metin);">
+                {{ book.title }}
+            </span>
+            <span class="d-block soluk small">{{ book.author }}</span>
+            <span class="d-flex flex-wrap gap-1 mt-1">
+                <span class="rozet rozet-mor">{{ book.category }}</span>
+                {% if sahibi_goster %}
+                    <span class="rozet rozet-pembe">@{{ book.owner.username }}</span>
+                {% endif %}
+            </span>
+        </span>
+    </a>
+</div>

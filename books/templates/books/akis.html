@@ -1,0 +1,64 @@
+{% extends 'books/base.html' %}
+
+{% block title %}Akış — Kitaplık{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Akış</h1>
+            <p class="soluk small mb-0">
+                Senin, arkadaşlarının ve kitaplığını herkese açanların rafları —
+                {{ books.paginator.count }} kitap
+            </p>
+        </div>
+
+        <a href="{% url 'book-create' %}" class="btn btn-gradyan px-4 d-inline-flex align-items-center gap-2">
+            {% include 'books/icons/book.html' %}
+            Kitap Ekle
+        </a>
+    </div>
+
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <span class="soluk small fw-semibold me-1">Sırala:</span>
+        <div class="sekmeler">
+            <a href="{% url 'book-akis' %}" class="{% if not request.GET.sort %}aktif{% endif %}">
+                En yeni
+            </a>
+            <a href="?sort=title" class="{% if request.GET.sort == 'title' %}aktif{% endif %}">
+                Başlık
+            </a>
+            <a href="?sort=page_count" class="{% if request.GET.sort == 'page_count' %}aktif{% endif %}">
+                Sayfa sayısı
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% for book in books %}
+            {% include 'books/_book_card.html' with sahibi_goster=True %}
+        {% empty %}
+            <div class="col-12">
+                <div class="kart">
+                    <div class="bos-durum">
+                        <span class="ikon-kutu ikon-kutu-lg mb-3">
+                            {% include 'books/icons/library.html' %}
+                        </span>
+                        <p class="mb-3">
+                            Akışta henüz kitap yok. İlk kitabını ekle ya da birini arkadaş olarak ekle.
+                        </p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="{% url 'book-create' %}" class="btn btn-gradyan px-4">Kitap Ekle</a>
+                            <a href="{% url 'user-search' %}" class="btn btn-hayalet px-4">Kişi Ara</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% include 'books/_pagination.html' %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'books/base.html' %}
+
+{% block title %}Hesap Durumu — Kitaplık{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            {% if approval and approval.status == 'rejected' %}
+
+                <div class="kart">
+                    <div class="kart-serit" style="background: #EF4444;"></div>
+                    <div class="card-body p-4 p-md-5 text-center">
+                        <span class="ikon-kutu ikon-kutu-lg ikon-kutu-kirmizi mb-3">
+                            {% include 'books/icons/ban.html' %}
+                        </span>
+
+                        <h1 class="h5 fw-bold mb-2">Hesabınız reddedildi</h1>
+                        <p class="soluk mb-4">
+                            Başvurunuz yönetici tarafından incelendi ve onaylanmadı.
+                        </p>
+
+                        {% if approval.reason %}
+                            <div class="alert alert-danger text-start small mb-4">
+                                <strong>Red sebebi:</strong><br>
+                                {{ approval.reason }}
+                            </div>
+                        {% endif %}
+
+                        <form method="POST" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-hayalet px-4">Çıkış Yap</button>
+                        </form>
+                    </div>
+                </div>
+
+            {% else %}
+
+                <div class="kart">
+                    <div class="kart-serit"></div>
+                    <div class="card-body p-4 p-md-5 text-center">
+                        <span class="ikon-kutu ikon-kutu-lg ikon-kutu-sari mb-3">
+                            {% include 'books/icons/clock.html' %}
+                        </span>
+
+                        <h1 class="h5 fw-bold mb-2">Hesabınız onay bekliyor</h1>
+                        <p class="soluk mb-4">
+                            Hesabınız henüz yönetici tarafından onaylanmamıştır.
+                            Onaylandığında bilgilendirileceksiniz.
+                        </p>
+
+                        <span class="rozet rozet-sari mb-4">
+                            Başvuru: {{ approval.created_at|date:"d F Y, H:i"|default:"-" }}
+                        </span>
+
+                        <hr class="ayirac my-4">
+
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="{% url 'my-profile' %}" class="btn btn-gradyan px-4">
+                                Profilimi Doldur
+                            </a>
+                            <form method="POST" action="{% url 'logout' %}" class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-hayalet px-4">Çıkış Yap</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

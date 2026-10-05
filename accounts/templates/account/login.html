@@ -1,0 +1,72 @@
+{% extends 'books/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Giriş Yap — Kitaplık{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5">
+
+            <div class="text-center mb-4">
+                <span class="ikon-kutu ikon-kutu-gradyan mb-3">
+                    {% include 'books/icons/login.html' %}
+                </span>
+                <h1 class="h4 fw-bold mb-1">Tekrar hoş geldin</h1>
+                <p class="soluk small mb-0">Kitaplığına devam etmek için giriş yap.</p>
+            </div>
+
+            <div class="kart">
+                <div class="kart-serit"></div>
+                <div class="card-body p-4 p-md-5">
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small">
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-semibold small">
+                                    {{ field.label }}
+                                </label>
+
+                                {% if field.errors %}
+                                    {% render_field field class="form-control is-invalid" %}
+                                {% else %}
+                                    {% render_field field class="form-control" %}
+                                {% endif %}
+
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+
+                        <button type="submit" class="btn btn-gradyan w-100 py-2 mt-2">
+                            Giriş Yap
+                        </button>
+                    </form>
+
+                    <hr class="ayirac my-4">
+
+                    <p class="text-center soluk small mb-0">
+                        Hesabın yok mu?
+                        <a href="{% url 'register' %}" class="fw-bold text-decoration-none metin-gradyan">
+                            Kayıt ol
+                        </a>
+                    </p>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

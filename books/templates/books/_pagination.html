@@ -1,0 +1,32 @@
+{% comment %}
+Sayfa gezinme çubuğu. books bir Paginator sayfası olmalı.
+Sıralama tercihi (?sort=) sayfa değişince kaybolmasın diye linklere ekleniyor.
+{% endcomment %}
+
+{% if books.paginator.num_pages > 1 %}
+    <div class="d-flex justify-content-center align-items-center gap-2 mt-5">
+
+        {% if books.has_previous %}
+            <a href="?page={{ books.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
+               class="btn btn-hayalet btn-sm px-3">
+                ← Önceki
+            </a>
+        {% else %}
+            <span class="btn btn-hayalet btn-sm px-3 disabled opacity-50">← Önceki</span>
+        {% endif %}
+
+        <span class="soluk small px-2">
+            Sayfa {{ books.number }} / {{ books.paginator.num_pages }}
+        </span>
+
+        {% if books.has_next %}
+            <a href="?page={{ books.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
+               class="btn btn-hayalet btn-sm px-3">
+                Sonraki →
+            </a>
+        {% else %}
+            <span class="btn btn-hayalet btn-sm px-3 disabled opacity-50">Sonraki →</span>
+        {% endif %}
+
+    </div>
+{% endif %}

@@ -1,24 +1,97 @@
 {% extends 'books/base.html' %}
 {% load static %}
-{% block content %}
-<div class="bg-dark py-5">
-    <div class="container">
 
-        <div class="row align-items-center no-gutters">
-            <div class="col-xl-5 col-lg-6 col-md-12">
-                <div class="py-5 py-lg-0">
-                    <h1 class="text-white display-4 fw-bold">Merhaba Kitaplığa Hoş Geldin
-                    </h1>
-                    <p class="text-white-50 mb-4 lead">
-                        Kitaplarınızı ekleyin, düzenleyin ve takip edin.
-                    </p>
-                    <a href="{% url 'book-list' %}" class="btn btn-success">Kitapları Gör</a>
-                    <a href="{% url 'book-create' %}" class="btn btn-light">Kitap Ekle </a>
-                </div>
+{% block content %}
+<div class="container my-5">
+
+    <div class="hero p-4 p-md-5 mb-5">
+        <div class="row align-items-center">
+            <div class="col-lg-7 position-relative" style="z-index: 1;">
+                <span class="rozet rozet-pembe mb-3">Sosyal kitaplık</span>
+
+                <h1 class="display-5 mb-3">
+                    Okuduklarını topla,<br>arkadaşlarınla paylaş.
+                </h1>
+
+                <p class="lead mb-4" style="opacity: .92; max-width: 46ch;">
+                    Kitaplarını ekle, notunu ver, arkadaşlarının raflarında ne var keşfet.
+                </p>
+
+                {% if user.account_approval.status == 'approved' %}
+                    <a href="{% url 'book-akis' %}" class="btn btn-light px-4 py-2 fw-bold me-2">
+                        Akışa Git
+                    </a>
+                    <a href="{% url 'book-list' %}" class="btn btn-hayalet px-4 py-2">
+                        Kitaplarım
+                    </a>
+                {% elif user.is_authenticated %}
+                    <a href="{% url 'pending' %}" class="btn btn-light px-4 py-2 fw-bold">
+                        Hesap Durumum
+                    </a>
+                {% else %}
+                    <a href="{% url 'register' %}" class="btn btn-light px-4 py-2 fw-bold me-2">
+                        Hemen Başla
+                    </a>
+                    <a href="{% url 'login' %}" class="btn btn-hayalet px-4 py-2">
+                        Giriş Yap
+                    </a>
+                {% endif %}
             </div>
 
+            <div class="col-lg-5 d-none d-lg-flex justify-content-center position-relative" style="z-index: 1;">
+                <span class="hero-ikon">
+                    {% include 'books/icons/book.html' %}
+                </span>
+            </div>
         </div>
     </div>
-</div>
 
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="kart kart-hover h-100">
+                <div class="kart-serit"></div>
+                <div class="card-body p-4">
+                    <span class="ikon-kutu ikon-kutu-gradyan mb-3">
+                        {% include 'books/icons/folder.html' %}
+                    </span>
+                    <h2 class="h6 fw-bold mb-2">Raflarını düzenle</h2>
+                    <p class="soluk small mb-0">
+                        Kitaplarını kategoriye ayır, okuduklarını işaretle, puan ver.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="kart kart-hover h-100">
+                <div class="kart-serit"></div>
+                <div class="card-body p-4">
+                    <span class="ikon-kutu ikon-kutu-gradyan mb-3">
+                        {% include 'books/icons/users.html' %}
+                    </span>
+                    <h2 class="h6 fw-bold mb-2">Arkadaş ekle</h2>
+                    <p class="soluk small mb-0">
+                        İstek gönder, kabul et, arkadaşlarının kitaplığını gör.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="kart kart-hover h-100">
+                <div class="kart-serit"></div>
+                <div class="card-body p-4">
+                    <span class="ikon-kutu ikon-kutu-gradyan mb-3">
+                        {% include 'books/icons/shield.html' %}
+                    </span>
+                    <h2 class="h6 fw-bold mb-2">Sen karar ver</h2>
+                    <p class="soluk small mb-0">
+                        Kitaplığın herkese açık mı, sadece arkadaşlarına mı? Ayarlardan seç.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
 {% endblock %}

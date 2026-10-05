@@ -1,3 +1,461 @@
+/* ---------------------------------------------------------------
+   Kitaplık — koyu tema
+   Renkler ve yüzeyler tek yerde; şablonlar bu değişkenlere dayanıyor.
+----------------------------------------------------------------*/
+
+:root {
+    color-scheme: dark;
+
+    --mor: #A78BFA;
+    --mor-koyu: #C4B5FD;
+    --pembe: #F472B6;
+    --gradyan: linear-gradient(135deg, #7C3AED 0%, #A855F7 50%, #EC4899 100%);
+    --gradyan-soft: linear-gradient(135deg, rgba(124, 58, 237, .25) 0%, rgba(236, 72, 153, .22) 100%);
+
+    --zemin: #0F0D1A;
+    --yuzey: #191527;
+    --yuzey-2: #221D33;
+    --metin: #EDEAF7;
+    --soluk: #9A93B4;
+    --kenar: #2E2745;
+
+    --golge: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 30px rgba(0, 0, 0, .35);
+    --golge-hover: 0 6px 14px rgba(0, 0, 0, .4), 0 20px 48px rgba(124, 58, 237, .28);
+    --yuvarlak: 18px;
+}
+
 body {
-    background-color: #f5f5f5;
+    background-color: var(--zemin);
+    background-image:
+        radial-gradient(circle at 10% -10%, rgba(124, 58, 237, .28), transparent 45%),
+        radial-gradient(circle at 92% 2%, rgba(236, 72, 153, .20), transparent 42%),
+        radial-gradient(circle at 50% 110%, rgba(56, 189, 248, .10), transparent 45%);
+    background-attachment: fixed;
+    color: var(--metin);
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6, .fw-bold {
+    letter-spacing: -.02em;
+    color: var(--metin);
+}
+
+a { color: var(--mor-koyu); }
+
+/* ---------- Navbar ---------- */
+
+.navbar-kitaplik {
+    background: rgba(15, 13, 26, .72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--kenar);
+    padding-block: .65rem;
+}
+
+.navbar-kitaplik .navbar-brand {
+    font-weight: 800;
+    font-size: 1.25rem;
+    background: linear-gradient(135deg, #C4B5FD 0%, #F9A8D4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Marka yazısı gradyan olduğu için ikonun rengini ayrıca vermek gerekiyor;
+   aksi hâlde currentColor saydam kalır ve ikon görünmez. */
+.navbar-kitaplik .navbar-brand .ikon {
+    width: 22px;
+    height: 22px;
+}
+
+.navbar-kitaplik .navbar-toggler-icon {
+    filter: invert(1) brightness(1.6);
+}
+
+.navbar-kitaplik .nav-link {
+    color: var(--soluk);
+    font-weight: 600;
+    font-size: .93rem;
+    border-radius: 999px;
+    padding: .4rem .9rem !important;
+    transition: all .18s ease;
+}
+
+.navbar-kitaplik .nav-link:hover {
+    color: #fff;
+    background: rgba(167, 139, 250, .14);
+}
+
+.kullanici-rozeti {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .3rem .8rem .3rem .35rem;
+    border-radius: 999px;
+    background: rgba(167, 139, 250, .14);
+    border: 1px solid var(--kenar);
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--mor-koyu);
+}
+
+.kullanici-rozeti .baş-harf {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--gradyan);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: .75rem;
+}
+
+/* ---------- Kartlar ---------- */
+
+.kart {
+    background: var(--yuzey);
+    border: 1px solid var(--kenar);
+    border-radius: var(--yuvarlak);
+    box-shadow: var(--golge);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    overflow: hidden;
+}
+
+.kart-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--golge-hover);
+    border-color: rgba(167, 139, 250, .45);
+}
+
+.kart-serit {
+    height: 5px;
+    background: var(--gradyan);
+}
+
+.card-body { color: var(--metin); }
+
+/* ---------- Butonlar ---------- */
+
+.btn {
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+
+.btn:active { transform: translateY(1px); }
+
+.btn-gradyan {
+    background: var(--gradyan);
+    border: none;
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(124, 58, 237, .45);
+}
+
+.btn-gradyan:hover {
+    color: #fff;
+    filter: brightness(1.12);
+    box-shadow: 0 10px 28px rgba(124, 58, 237, .58);
+}
+
+.btn-hayalet {
+    background: var(--yuzey-2);
+    border: 1px solid var(--kenar);
+    color: var(--metin);
+}
+
+.btn-hayalet:hover {
+    border-color: var(--mor);
+    color: #fff;
+    background: rgba(167, 139, 250, .16);
+}
+
+.btn-light {
+    background: #fff;
+    border: none;
+    color: #1E1B33;
+}
+
+.btn-light:hover { background: #F1EEFF; color: #1E1B33; }
+
+.favori-btn .ikon { width: 16px; height: 16px; }
+
+.favori-btn:hover { border-color: #F472B6; color: #F9A8D4; }
+
+/* ---------- Rozetler ---------- */
+
+.rozet {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+
+.rozet-mor   { background: rgba(167, 139, 250, .16); color: #C4B5FD; border-color: rgba(167, 139, 250, .3); }
+.rozet-pembe { background: rgba(244, 114, 182, .16); color: #F9A8D4; border-color: rgba(244, 114, 182, .3); }
+.rozet-yesil { background: rgba(52, 211, 153, .15);  color: #6EE7B7; border-color: rgba(52, 211, 153, .3); }
+.rozet-sari  { background: rgba(251, 191, 36, .15);  color: #FCD34D; border-color: rgba(251, 191, 36, .3); }
+.rozet-gri   { background: rgba(154, 147, 180, .14); color: var(--soluk); border-color: var(--kenar); }
+
+/* ---------- Hero ---------- */
+
+.hero {
+    background: var(--gradyan);
+    border-radius: 28px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(124, 58, 237, .35);
+}
+
+.hero::after {
+    content: "";
+    position: absolute;
+    inset: auto -60px -120px auto;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .13);
+}
+
+.hero h1 {
+    font-weight: 800;
+    letter-spacing: -.03em;
+    color: #fff;
+}
+
+.hero-ikon {
+    width: 128px;
+    height: 128px;
+    border-radius: 38px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, .13);
+    border: 1px solid rgba(255, 255, 255, .22);
+    backdrop-filter: blur(6px);
+    align-self: center;
+}
+
+.hero-ikon .ikon {
+    width: 66px;
+    height: 66px;
+    vertical-align: 0;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .35));
+}
+
+.hero .btn-hayalet {
+    background: rgba(255, 255, 255, .16);
+    border-color: rgba(255, 255, 255, .35);
+    color: #fff;
+}
+
+.hero .btn-hayalet:hover {
+    background: rgba(255, 255, 255, .26);
+    border-color: #fff;
+    color: #fff;
+}
+
+/* ---------- Formlar ---------- */
+
+.form-control, .form-select {
+    border-radius: 12px;
+    border: 1px solid var(--kenar);
+    padding: .6rem .85rem;
+    background: var(--yuzey-2);
+    color: var(--metin);
+}
+
+.form-control::placeholder { color: #6F678A; }
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--mor);
+    box-shadow: 0 0 0 4px rgba(167, 139, 250, .18);
+    background: var(--yuzey-2);
+    color: var(--metin);
+}
+
+.form-select option { background: var(--yuzey-2); color: var(--metin); }
+
+.form-label { color: var(--metin); margin-bottom: .35rem; }
+
+.form-text { color: var(--soluk) !important; }
+
+.form-check-input {
+    background-color: var(--yuzey-2);
+    border-color: var(--kenar);
+}
+
+.form-check-input:checked {
+    background-color: var(--mor);
+    border-color: var(--mor);
+}
+
+.form-check-label { color: var(--metin); }
+
+.input-group .btn { border-radius: 999px; margin-left: .5rem; }
+.input-group .form-control { border-radius: 12px !important; }
+
+/* ---------- Sekmeler ---------- */
+
+.sekmeler {
+    display: inline-flex;
+    gap: .25rem;
+    padding: .3rem;
+    background: var(--yuzey);
+    border: 1px solid var(--kenar);
+    border-radius: 999px;
+    box-shadow: var(--golge);
+}
+
+.sekmeler a {
+    padding: .45rem 1.1rem;
+    border-radius: 999px;
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--soluk);
+    text-decoration: none;
+    transition: all .18s ease;
+}
+
+.sekmeler a:hover { color: #fff; }
+
+.sekmeler a.aktif {
+    background: var(--gradyan);
+    color: #fff;
+}
+
+/* ---------- Avatar ---------- */
+
+.avatar {
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--yuzey-2);
+}
+
+.avatar-halka {
+    padding: 3px;
+    background: var(--gradyan);
+    border-radius: 50%;
+    display: inline-block;
+    line-height: 0;
+}
+
+.avatar-halka img { border: 2px solid var(--yuzey); }
+
+/* ---------- Boş durum ---------- */
+
+.bos-durum {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--soluk);
+    font-size: .92rem;
+}
+
+/* ---------- Uyarılar ---------- */
+
+.alert {
+    border: 1px solid transparent;
+    border-radius: 14px;
+    font-weight: 500;
+}
+
+.alert-success   { background: rgba(52, 211, 153, .13); color: #6EE7B7; border-color: rgba(52, 211, 153, .3); }
+.alert-danger    { background: rgba(248, 113, 113, .13); color: #FCA5A5; border-color: rgba(248, 113, 113, .3); }
+.alert-info      { background: rgba(167, 139, 250, .13); color: #C4B5FD; border-color: rgba(167, 139, 250, .3); }
+.alert-warning   { background: rgba(251, 191, 36, .13); color: #FCD34D; border-color: rgba(251, 191, 36, .3); }
+.alert-secondary { background: rgba(154, 147, 180, .12); color: var(--soluk); border-color: var(--kenar); }
+
+.btn-close { filter: invert(1) grayscale(1) brightness(1.8); }
+
+/* ---------- İkonlar ---------- */
+
+/* İkonlar renklerini kendi gradyanlarından alıyor; gölge derinlik veriyor. */
+.ikon {
+    width: 18px;
+    height: 18px;
+    vertical-align: -.22em;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3));
+}
+
+.ikon-sm { width: 14px; height: 14px; }
+
+/* Dekoratif ikonların sarmalayıcısı — arka planı yok, yalnızca boyut verir. */
+.ikon-kutu {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    background: none;
+    border: none;
+}
+
+.ikon-kutu .ikon {
+    width: 32px;
+    height: 32px;
+    vertical-align: 0;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .38));
+}
+
+/* Şablonlardaki renk sınıfları artık ikonun kendi rengine bırakıldı. */
+.ikon-kutu-gradyan,
+.ikon-kutu-kirmizi,
+.ikon-kutu-sari {
+    background: none;
+    border: none;
+}
+
+.ikon-kutu-lg {
+    width: 64px;
+    height: 64px;
+}
+
+.ikon-kutu-lg .ikon {
+    width: 46px;
+    height: 46px;
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, .42));
+}
+
+/* Kapağı olmayan kitaplar için desenli alan */
+.kapak-bos {
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(circle at 30% 25%, rgba(167, 139, 250, .22), transparent 55%),
+        radial-gradient(circle at 75% 80%, rgba(244, 114, 182, .18), transparent 55%),
+        var(--yuzey-2);
+    color: var(--mor-koyu);
+}
+
+.kapak-bos .ikon {
+    width: 46px;
+    height: 46px;
+    opacity: .9;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, .4));
+}
+
+/* ---------- Küçük yardımcılar ---------- */
+
+.metin-gradyan {
+    background: linear-gradient(135deg, #C4B5FD 0%, #F9A8D4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.soluk { color: var(--soluk); }
+
+.text-danger { color: #FCA5A5 !important; }
+
+.ayirac {
+    height: 1px;
+    background: var(--kenar);
+    border: none;
+    opacity: 1;
 }

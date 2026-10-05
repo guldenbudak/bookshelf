@@ -1,5 +1,5 @@
 from django import forms
-from .models import Book, Category
+from .models import Book, Category, Comment
 
 
 class ManualBookForm(forms.Form):
@@ -29,3 +29,21 @@ class BookForm(forms.ModelForm):
             if rating < 1 or rating > 5:
                 raise forms.ValidationError('Puan 1 ile 5 arasında olmalıdır.')
         return rating
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        # Yazar ve kitap formdan gelmez; view'da oturumdaki kullanıcıdan ve
+        # adresten alınır, böylece kimse başkası adına yorum yazamaz.
+        fields = ('text',)
+        labels = {'text': 'Yorumun'}
+        widgets = {
+            'text': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'Bu kitap hakkında ne düşünüyorsun?',
+            }),
+        }
+        error_messages = {
+            'text': {'required': "Yorum boş olamaz."},
+        }
