@@ -325,7 +325,10 @@ a { color: var(--mor-koyu); }
 
 .sekmeler a:hover { color: #fff; }
 
-.sekmeler a.aktif {
+/* .aktif sıralama bağlantılarında; .active Bootstrap'in sekmelerinde —
+   sekmeye tıklandığında bu sınıfı Bootstrap kendisi taşıyor. */
+.sekmeler a.aktif,
+.sekmeler a.active {
     background: var(--gradyan);
     color: #fff;
 }

@@ -138,6 +138,22 @@
 
             </form>
 
+            {# Silme ayrı bir forma gitsin: yanlışlıkla Kaydet'e basılmasın. #}
+            <div class="kart mt-5 border-danger-subtle">
+                <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div>
+                        <h2 class="h6 fw-bold mb-1 text-danger">Hesabı sil</h2>
+                        <p class="soluk small mb-0">
+                            Kitapların, yorumların ve arkadaşlıkların kalıcı olarak silinir.
+                        </p>
+                    </div>
+
+                    <a href="{% url 'account-delete' %}" class="btn btn-hayalet px-4 text-danger">
+                        Hesabımı sil
+                    </a>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

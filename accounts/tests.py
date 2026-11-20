@@ -76,3 +76,111 @@ class ArkadaslikIstegiTests(TestCase):
         self.client.post(reverse('friend-request-send', args=['bora']))
 
         self.assertTrue(self.ayse.profile.is_friend_with(self.bora.profile))
+
+    def test_gelen_istek_arkadaslar_sayfasinda_listelenir(self):
+        FriendRequest.objects.create(from_user=self.bora, to_user=self.ayse)
+
+        cevap = self.client.get(reverse('friends'))
+
+        self.assertEqual([i.from_user for i in cevap.context['incoming']], [self.bora])
+        self.assertIn('bora', cevap.content.decode())
+
+    def test_kabul_edilen_istek_gelenler_listesinden_cikar(self):
+        istek = FriendRequest.objects.create(from_user=self.bora, to_user=self.ayse)
+
+        self.client.post(reverse('friend-request-accept', args=[istek.pk]))
+        cevap = self.client.get(reverse('friends'))
+
+        self.assertEqual(list(cevap.context['incoming']), [])
+
+
+class HesapSilmeTests(TestCase):
+    """Hesap silme geri alınamaz; parola doğrulaması şart."""
+
+    def setUp(self):
+        self.kullanici = kullanici_olustur('silinecek')
+        self.client.force_login(self.kullanici)
+
+    def test_onay_sayfasi_hicbir_sey_silmez(self):
+        cevap = self.client.get(reverse('account-delete'))
+
+        self.assertEqual(cevap.status_code, 200)
+        self.assertTrue(User.objects.filter(username='silinecek').exists())
+
+    def test_yanlis_parola_ile_silinmez(self):
+        self.client.post(reverse('account-delete'), {'password': 'yanlis'})
+
+        self.assertTrue(User.objects.filter(username='silinecek').exists())
+
+    def test_dogru_parola_ile_silinir(self):
+        self.client.post(reverse('account-delete'), {'password': PAROLA})
+
+        self.assertFalse(User.objects.filter(username='silinecek').exists())
+
+    def test_silinen_hesabin_oturumu_kapanir(self):
+        self.client.post(reverse('account-delete'), {'password': PAROLA})
+
+        cevap = self.client.get(reverse('book-list'))
+
+        self.assertEqual(cevap.status_code, 302)
+        self.assertIn(reverse('login'), cevap['Location'])
+
+    def test_giris_yapmamis_ziyaretci_silme_sayfasini_goremez(self):
+        self.client.logout()
+
+        cevap = self.client.get(reverse('account-delete'))
+
+        self.assertEqual(cevap.status_code, 302)
+        self.assertIn(reverse('login'), cevap['Location'])
+
+
+class CikisTests(TestCase):
+    def setUp(self):
+        self.kullanici = kullanici_olustur('cikan')
+        self.client.force_login(self.kullanici)
+
+    def test_onay_sayfasi_oturumu_kapatmaz(self):
+        self.client.get(reverse('logout-confirm'))
+
+        cevap = self.client.get(reverse('book-list'))
+
+        self.assertEqual(cevap.status_code, 200)
+
+    def test_post_ile_cikis_yapilir(self):
+        self.client.post(reverse('logout'))
+
+        cevap = self.client.get(reverse('book-list'))
+
+        self.assertEqual(cevap.status_code, 302)
+        self.assertIn(reverse('login'), cevap['Location'])
+
+
+class TelefonDogrulamaTests(TestCase):
+    """Telefon alanı serbest metin kabul etmemeli."""
+
+    def setUp(self):
+        self.kullanici = kullanici_olustur('telefoncu')
+        self.client.force_login(self.kullanici)
+
+    def profili_kaydet(self, phone):
+        return self.client.post(reverse('profile-edit'), {
+            'display_name': 'Ad', 'bio': '', 'birth_date': '', 'phone': phone,
+            'theme': 'dark',
+            # inline formset'in beklediği yönetim alanları
+            'social_links-TOTAL_FORMS': '0', 'social_links-INITIAL_FORMS': '0',
+            'social_links-MIN_NUM_FORMS': '0', 'social_links-MAX_NUM_FORMS': '5',
+        })
+
+    def test_gecersiz_numara_reddedilir(self):
+        self.profili_kaydet('asdf')
+
+        self.kullanici.profile.refresh_from_db()
+        self.assertEqual(self.kullanici.profile.phone, '')
+
+    def test_farkli_yazimlar_ayni_bicimde_saklanir(self):
+        for yazim in ('0532 123 45 67', '+90 532 123 45 67', '(0532) 123-45-67'):
+            with self.subTest(yazim=yazim):
+                self.profili_kaydet(yazim)
+
+                self.kullanici.profile.refresh_from_db()
+                self.assertEqual(self.kullanici.profile.phone, '05321234567')

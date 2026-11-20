@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
@@ -8,7 +9,7 @@ from django.views.decorators.http import require_POST
 
 from django.db import transaction
 
-from books.models import Book
+from books.models import Book, Comment
 from bookshelf.shortcuts import geri_don
 
 from .decorators import approved_required, is_approved
@@ -146,6 +147,48 @@ def profile_edit(request):
         'profile_form': profile_form,
         'settings_form': settings_form,
         'link_formset': link_formset,
+    })
+
+
+@login_required
+def logout_confirm(request):
+    """Çıkıştan önce soran ara sayfa.
+
+    Asıl çıkış yine LogoutView'da ve yalnızca POST ile oluyor; burası
+    sadece onay ekranı.
+    """
+    return render(request, 'account/logout_confirm.html')
+
+
+@login_required
+def account_delete(request):
+    """Kullanıcının kendi hesabını silmesi.
+
+    Geri alınamadığı için iki şey isteniyor: onay sayfasından geçmek ve
+    parolayı tekrar yazmak. Parola şartı, açık kalmış bir oturumu bulan
+    birinin hesabı silmesini engelliyor.
+    """
+    user = request.user
+
+    if request.method == 'POST':
+        parola = request.POST.get('password', '')
+
+        if not user.check_password(parola):
+            messages.error(request, "Parola yanlış. Hesabın silinmedi.")
+            return redirect('account-delete')
+
+        kullanici_adi = user.username
+        # Önce oturumu kapat: silinen kullanıcıya ait oturum açık kalmasın.
+        logout(request)
+        user.delete()
+
+        messages.success(request, f"{kullanici_adi} hesabı tamamen silindi.")
+        return redirect('home')
+
+    return render(request, 'account/account_delete.html', {
+        'kitap_sayisi': Book.objects.filter(owner=user).count(),
+        'yorum_sayisi': Comment.objects.filter(author=user).count(),
+        'arkadas_sayisi': user.profile.friends.count(),
     })
 
 
