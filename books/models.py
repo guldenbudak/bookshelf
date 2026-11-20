@@ -1,11 +1,11 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Count, Exists, OuterRef, Q
-from django.forms import ModelForm
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=50,unique=True)
+    name = models.CharField(max_length=50, unique=True)
+
     def __str__(self):
         return self.name
 
@@ -27,9 +27,9 @@ class BookQuerySet(models.QuerySet):
         arkadas_idleri = user.profile.friends.values_list('user_id', flat=True)
 
         return self.filter(
-            Q(owner=user)                                        # kendi kitapları
-            | Q(owner_id__in=arkadas_idleri)                     # arkadaşlarınınkiler
-            | Q(owner__profile__settings__books_public=True)     # herkese açık olanlar
+            Q(owner=user)  # kendi kitapları
+            | Q(owner_id__in=arkadas_idleri)  # arkadaşlarınınkiler
+            | Q(owner__profile__settings__books_public=True)  # herkese açık olanlar
         )
 
     def owned_by(self, user):
@@ -87,9 +87,9 @@ class Book(models.Model):
     )
     page_count = models.PositiveIntegerField()
     is_read = models.BooleanField(default=False)
-    rating = models.PositiveSmallIntegerField(null=True,blank=True)
+    rating = models.PositiveSmallIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    cover = models.ImageField(upload_to='covers/',blank=True)
+    cover = models.ImageField(upload_to='covers/', blank=True)
 
     objects = BookQuerySet.as_manager()
 
@@ -151,7 +151,3 @@ class Comment(models.Model):
         if self.is_deleted:
             return False
         return self.author_id == user.id or self.book.owner_id == user.id
-
-
-
-
